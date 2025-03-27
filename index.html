@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>스티브 게임</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #1a1a1a;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    #game-container {
+      display: flex;
+      background-color: #2a2a2a;
+      padding: 20px;
+      border-radius: 10px;
+      width: 800px;
+      height: 500px;
+    }
+
+    /* GIF 영역 */
+    #gif-container img {
+      width: 200px;
+      height: 200px;
+      border-radius: 8px;
+    }
+
+    /* 채팅 영역 */
+    #chat-container {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      margin-left: 20px;
+    }
+
+    #chat-box {
+      background-color: #333;
+      padding: 10px;
+      border-radius: 8px;
+      height: 300px;
+      overflow-y: auto;
+    }
+
+    .message {
+      margin-bottom: 8px;
+    }
+
+    .steve {
+      color: #1e90ff;
+    }
+
+    .user {
+      color: #32cd32;
+    }
+
+    .narration {
+      font-style: italic;
+      color: #aaa;
+    }
+
+    /* 입력 및 버튼 영역 */
+    #user-input, .button-container button {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+    }
+
+    #user-input {
+      background-color: #444;
+      color: #fff;
+      width: calc(100% - 120px);
+    }
+
+    .button-container {
+      display: flex;
+      gap: 8px;
+    }
+
+    #send-btn, #retry-btn, #reset-btn {
+      background-color: #555;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    #send-btn:hover, #retry-btn:hover, #reset-btn:hover {
+      background-color: #777;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <!-- GIF 영역 -->
+    <div id="gif-container">
+      <img src="Save-steve.gif" alt="게임 GIF">
+    </div>
+
+    <!-- 채팅 영역 -->
+    <div id="chat-container">
+      <div id="chat-box"></div>
+
+      <div class="button-container">
+        <input type="text" id="user-input" placeholder="메시지를 입력하세요" />
+        <button id="send-btn">전송</button>
+        <button id="retry-btn">다시 시도</button>
+        <button id="reset-btn">초기화</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 메시지 전송 처리
+    async function sendMessage() {
+      const message = document.getElementById("user-input").value;
+      if (!message) return;
+
+      const response = await fetch('http://localhost:3000/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message }),
+      });
+      
+      const data = await response.json();
+      displayMessage('스티브', data.message, 'steve');
+      document.getElementById("user-input").value = ''; // 입력창 비우기
+    }
+
+    // 스티브의 메시지 화면에 표시
+    function displayMessage(author, message, className) {
+      const chatBox = document.getElementById("chat-box");
+      const messageElement = document.createElement("p");
+      messageElement.textContent = `${author}: ${message}`;
+      messageElement.classList.add(className);
+      chatBox.appendChild(messageElement);
+      chatBox.scrollTop = chatBox.scrollHeight; // 스크롤 바가 항상 아래로 가게 설정
+    }
+
+    // 게임 다시 시도
+    function retry() {
+      const chatBox = document.getElementById("chat-box");
+      chatBox.innerHTML = ''; // 대화 내용 초기화
+      // 추가적인 재시도 동작
+    }
+
+    // 게임 초기화
+    function resetGame() {
+      const chatBox = document.getElementById("chat-box");
+      chatBox.innerHTML = ''; // 대화 내용 초기화
+      // 게임 초기화 작업
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const chatBox = document.getElementById('chat-box');
+      const userInput = document.getElementById('user-input');
+      const sendBtn = document.getElementById('send-btn');
+      const retryBtn = document.getElementById('retry-btn');
+      const resetBtn = document.getElementById('reset-btn');
+
+      let boxOpened = false;
+      let keyFound = false;
+
+      const displayMessage = (text, sender) => {
+        const message = document.createElement('div');
+        message.classList.add('message', sender);
+        message.textContent = text;
+        chatBox.appendChild(message);
+        chatBox.scrollTop = chatBox.scrollHeight;
+      };
+
+      const sendMessage = async () => {
+        const message = userInput.value.trim();
+        if (!message) return;
+
+        displayMessage(`너: ${message}`, 'user');
+        userInput.value = '';
+
+        try {
+          const response = await fetch('http://localhost:3000/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message, boxOpened, keyFound }),
+          });
+
+          const data = await response.json();
+          displayMessage(`스티브: ${data.message}`, 'steve');
+        } catch (error) {
+          displayMessage('연결 오류 발생', 'narration');
+        }
+      };
+
+      sendBtn.addEventListener('click', sendMessage);
+
+      userInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') sendMessage();
+      });
+
+      retryBtn.addEventListener('click', () => {
+        sendMessage();
+      });
+
+      resetBtn.addEventListener('click', () => {
+        boxOpened = false;
+        keyFound = false;
+        chatBox.innerHTML = '';
+        displayMessage('"스티브가 방 안에서 깨어났습니다..."', 'narration');
+        displayMessage('스티브: Is there anyone there?', 'steve');
+      });
+    });
+  </script>
+</body>
+</html>
