@@ -23,7 +23,7 @@ const startServers = async () => {
 
 // 기본 페이지 (index0.html) 경로 수정
 app.get('/', (req, res) => {
-  res.sendFile(path.resolve('./public/index0.html'));  // 절대 경로로 수정
+  res.sendFile(path.resolve(__dirname, 'index0.html'));  // 루트 디렉토리에서 직접 참조
 });
 
 // 시작 함수 실행
