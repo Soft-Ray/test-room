@@ -1,6 +1,9 @@
-// main.js
 import express from 'express';
 import path from 'path';
+
+// ES6 모듈에서 __dirname 대신 사용
+const __dirname = path.dirname(new URL(import.meta.url).pathname);
+
 import { start as startChapter1 } from './chapter1/server1.js';
 import { start as startChapter2 } from './chapter2/server2.js';
 import { start as startChapter3 } from './chapter3/server3.js';
@@ -23,7 +26,7 @@ const startServers = async () => {
 
 // 기본 페이지 (index0.html) 경로 수정
 app.get('/', (req, res) => {
-  res.sendFile(path.resolve(__dirname, 'index0.html'));  // 루트 디렉토리에서 직접 참조
+  res.sendFile(path.resolve(__dirname, 'index0.html'));  // 절대 경로로 수정
 });
 
 // 시작 함수 실행
