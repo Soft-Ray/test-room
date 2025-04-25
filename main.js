@@ -1,10 +1,12 @@
+// main.js
 import express from 'express';
+import path from 'path';
 import { start as startChapter1 } from './chapter1/server1.js';
 import { start as startChapter2 } from './chapter2/server2.js';
 import { start as startChapter3 } from './chapter3/server3.js';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 
 // 각 서버의 start 함수를 비동기적으로 실행
 const startServers = async () => {
@@ -19,9 +21,9 @@ const startServers = async () => {
   }
 };
 
-// 기본 페이지 (index0.html)
+// 기본 페이지 (index0.html) 경로 수정
 app.get('/', (req, res) => {
-  res.sendFile('index0.html', { root: './public' });
+  res.sendFile(path.resolve('./public/index0.html'));  // 절대 경로로 수정
 });
 
 // 시작 함수 실행
