@@ -13,7 +13,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
+      height: 90vh;
       flex-direction: column;
       text-align: center;
     }
@@ -29,10 +29,10 @@ h1, h2, h3 {
 }
 
     h1 {
-      font-size: 5rem;
+      font-size: 8rem;
       color: #0ff;
       text-shadow: 0 0 10px #0ff, 0 0 20px #0ff;
-      margin-bottom: 20px;
+      margin-bottom: 40px;
     }
 
     .game-container {
@@ -44,11 +44,12 @@ h1, h2, h3 {
       box-shadow: 0 0 15px #0ff;
       width: 80%;
       max-width: 1200px;
-      height: auto;
+      height: 55%;
       text-align: left;
     }
 
     .gif-container {
+      margin-top: 10px;
       width: 100%;
       max-width: 300px;
       margin-right: 40px;
@@ -88,6 +89,7 @@ h1, h2, h3 {
     .chat-container {
       flex: 1;
       display: flex;
+      margin-top: 10px;
       flex-direction: column;
     }
 
@@ -99,7 +101,7 @@ h1, h2, h3 {
       font-size: 1.5rem;
       text-align: left;
       box-shadow: 0 0 10px #0ff;
-      height: 300px;
+      height: 480px;
       overflow-y: auto;
       white-space: pre-wrap;
       border-radius: 8px;
@@ -402,16 +404,48 @@ h1, h2, h3 {
     }
   
     function updateStatusText(imageSrc) {
-      const statusText = document.getElementById("statusText");
-      switch (imageSrc) {
-        case 'images/ang.png': statusText.textContent = '상태: 화남'; break;
-        case 'images/cold.png': statusText.textContent = '상태: 추움'; break;
-        case 'images/hap.png': statusText.textContent = '상태: 행복'; break;
-        case 'images/sad.png': statusText.textContent = '상태: 슬픔'; break;
-        case 'images/sup.png': statusText.textContent = '상태: 놀람'; break;
-        default: statusText.textContent = '상태: 스티브는 아무렇지 않은 것 같습니다.';
-      }
+    const statusText = document.getElementById("statusText");
+    const image = document.getElementById("sceneImage");
+
+    // 파일명 추출 (확장자 제거)
+    let filename = imageSrc.split('/').pop().split('.')[0];
+
+    if (filename === 'Save-steve') {
+        image.src = `Save-steve.gif?${new Date().getTime()}`;
+        statusText.textContent = '상태: 스티브는 아무렇지 않은 것 같습니다.';
+        return;
     }
+
+    // GIF 파일 경로 수정 - 이미지가 루트 디렉토리에 있는지 확인
+    const gifSrc = `${filename}.gif?${new Date().getTime()}`;
+    const pngSrc = `${filename}.png?${new Date().getTime()}`;
+    
+    // 디버깅을 위한 콘솔 로그 추가
+    console.log(`이미지 로드 시도: ${gifSrc} 또는 ${pngSrc}`);
+
+    // 이미지 로드 오류 처리
+    image.onerror = function () {
+        console.log(`GIF 로드 실패: ${gifSrc}, PNG 시도: ${pngSrc}`);
+        image.onerror = null; // 무한 루프 방지
+        image.src = pngSrc;
+    };
+
+    // 이미지 로드 성공 처리
+    image.onload = function() {
+        console.log(`이미지 로드 성공: ${image.src}`);
+    };
+
+    image.src = gifSrc;
+
+    switch (filename) {
+        case 'ang': statusText.textContent = '상태: 화남'; break;
+        case 'cold': statusText.textContent = '상태: 추움'; break;
+        case 'hap': statusText.textContent = '상태: 행복'; break;
+        case 'sad': statusText.textContent = '상태: 슬픔'; break;
+        case 'sup': statusText.textContent = '상태: 놀람'; break;
+        default: statusText.textContent = '상태: 스티브는 아무렇지 않은 것 같습니다.';
+    }
+}
   
     function resetChat() {
       currentChapter = 1;
@@ -438,6 +472,14 @@ h1, h2, h3 {
   
       if (message.includes('0')) {
         displayMessage('스티브', '다음으로 넘어갑니다. 당신은 이미 플레이를 해본적이 있나요?', 'steve');
+        await new Promise(r => setTimeout(r, 2000));
+        showOverlayAndButton(currentChapter + 1);
+        document.getElementById("promptInput").value = '';
+        return;
+      }
+
+      if (message.includes('열자')) {
+        displayMessage('나레이션', '문이 열렸습니다. 다음 방으로 이동해주세요.', 'narration');
         await new Promise(r => setTimeout(r, 2000));
         showOverlayAndButton(currentChapter + 1);
         document.getElementById("promptInput").value = '';
