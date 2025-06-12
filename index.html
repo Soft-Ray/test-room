@@ -329,6 +329,36 @@ h1, h2, h3 {
   color: #00ffff;
   font-family: 'VT323', monospace;
 }
+
+#achievementPopup {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #0ff;
+  color: rgb(0, 0, 0);
+  padding: 0 12px;
+  border-radius: 8px;
+  font-family: 'VT323', 'Neo둥근모', sans-serif;
+  font-size: 14px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  transform: translateY(100px);
+  opacity: 0;
+  transition: all 0.5s ease;
+  z-index: 100;
+  max-width: 280px;
+  height: 50px;
+  line-height: 50px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+
+#achievementPopup.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
   </style>
 </head>
 <body>
@@ -372,14 +402,72 @@ h1, h2, h3 {
     <button id="retry-btn">다시하기</button>
   </div>
 
-  <script>
+  <div id="achievementPopup"></div>
+
+<script>
     let hasKey = false;
     let boxOpened = false;
     let safeOpened = false;
     let currentChapter = 1;
     let nextChapterNumber = 2;
-    const playerName = localStorage.getItem('playerName') || 'playerName';
-    let currentSequence = []; // 전역 변수로 이동
+    // localStorage에서 플레이어 이름 가져오기 (기본값: '플레이어')
+    let playerName = localStorage.getItem('playerName') || '플레이어';
+    let currentSequence = [];
+  
+    // 플레이어 이름 설정 함수
+    function setPlayerName(name) {
+        if (name && name.trim() !== '') {
+            playerName = name.trim();
+            localStorage.setItem('playerName', playerName);
+            console.log(`플레이어 이름 설정됨: ${playerName}`);
+        }
+    }
+
+    // 플레이어 이름 가져오기 함수
+    function getPlayerName() {
+        return playerName || '플레이어';
+    }
+
+    // 5초간 플레이어 이름 표시 함수
+    function showTextForFiveSeconds() {
+        const textElement = document.createElement('div');
+        textElement.className = 'text-overlay';
+        textElement.textContent = `[${getPlayerName()}]`;
+        textElement.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-size: 16px;
+            z-index: 1000;
+            animation: fadeInOut 5s forwards;
+        `;
+        
+        // CSS 애니메이션이 없다면 추가
+        if (!document.querySelector('#textOverlayStyle')) {
+            const style = document.createElement('style');
+            style.id = 'textOverlayStyle';
+            style.textContent = `
+                @keyframes fadeInOut {
+                    0% { opacity: 0; transform: translateX(20px); }
+                    10% { opacity: 1; transform: translateX(0); }
+                    90% { opacity: 1; transform: translateX(0); }
+                    100% { opacity: 0; transform: translateX(20px); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        document.body.appendChild(textElement);
+        setTimeout(() => {
+            if (textElement.parentNode) {
+                textElement.remove();
+            }
+        }, 5000);
+    }
   
     function switchChapter(chapterNumber) {
       currentChapter = chapterNumber;
@@ -392,6 +480,9 @@ h1, h2, h3 {
       document.getElementById("sceneImage").src = 'Save-steve.gif';
       updateStatusText('Save-steve.gif');
       hideOverlayAndTransition();
+      
+      // 챕터 전환 시 플레이어 이름 표시
+      showTextForFiveSeconds();
     }
   
     function toggleDropdown() {
@@ -404,49 +495,68 @@ h1, h2, h3 {
     }
   
     function updateStatusText(imageSrc) {
-    const statusText = document.getElementById("statusText");
-    const image = document.getElementById("sceneImage");
+        const statusText = document.getElementById("statusText");
+        const image = document.getElementById("sceneImage");
 
-    // 파일명 추출 (확장자 제거)
-    let filename = imageSrc.split('/').pop().split('.')[0];
+        // 파일명 추출 (경로와 확장자 제거)
+        let filename = imageSrc.split('/').pop().split('.')[0];
+        
+        console.log(`원본 imageSrc: ${imageSrc}`);
+        console.log(`추출된 filename: ${filename}`);
 
-    if (filename === 'Save-steve') {
-        image.src = `Save-steve.gif?${new Date().getTime()}`;
-        statusText.textContent = '상태: 스티브는 아무렇지 않은 것 같습니다.';
-        return;
+        if (filename === 'Save-steve') {
+            image.src = `Save-steve.gif?${new Date().getTime()}`;
+            statusText.textContent = '상태: 스티브는 아무렇지 않은 것 같습니다.';
+            return;
+        }
+
+        // 서버에서 'images/hap.gif' 형식으로 오는 경우 처리
+        let finalImageSrc;
+        if (imageSrc.startsWith('images/')) {
+            // 이미 images/ 경로가 포함된 경우 그대로 사용
+            finalImageSrc = `${imageSrc}?${new Date().getTime()}`;
+        } else {
+            // images/ 경로가 없는 경우 추가
+            finalImageSrc = `images/${filename}.gif?${new Date().getTime()}`;
+        }
+        
+        console.log(`최종 이미지 경로: ${finalImageSrc}`);
+
+        // 이미지 로드 오류 처리
+        image.onerror = function () {
+            console.log(`GIF 로드 실패: ${finalImageSrc}`);
+            // PNG 대안 시도
+            const pngSrc = imageSrc.startsWith('images/') ? 
+                `images/${filename}.png?${new Date().getTime()}` : 
+                `${filename}.png?${new Date().getTime()}`;
+            
+            image.onerror = function() {
+                console.log(`PNG도 로드 실패: ${pngSrc}`);
+                // 기본 이미지로 대체
+                image.src = 'Save-steve.gif';
+                statusText.textContent = '상태: 스티브는 아무렇지 않은 것 같습니다.';
+            };
+            image.src = pngSrc;
+        };
+
+        // 이미지 로드 성공 처리
+        image.onload = function() {
+            console.log(`이미지 로드 성공: ${image.src}`);
+        };
+
+        image.src = finalImageSrc;
+
+        // 상태 텍스트 업데이트
+        switch (filename) {
+            case 'ang': statusText.textContent = '상태: 화남'; break;
+            case 'cold': statusText.textContent = '상태: 추움'; break;
+            case 'hap': statusText.textContent = '상태: 행복'; break;
+            case 'sad': statusText.textContent = '상태: 슬픔'; break;
+            case 'sup': statusText.textContent = '상태: 놀람'; break;
+            default: statusText.textContent = '상태: 스티브는 아무렇지 않은 것 같습니다.';
+        }
     }
-
-    // GIF 파일 경로 수정 - 이미지가 루트 디렉토리에 있는지 확인
-    const gifSrc = `${filename}.gif?${new Date().getTime()}`;
-    const pngSrc = `${filename}.png?${new Date().getTime()}`;
     
-    // 디버깅을 위한 콘솔 로그 추가
-    console.log(`이미지 로드 시도: ${gifSrc} 또는 ${pngSrc}`);
-
-    // 이미지 로드 오류 처리
-    image.onerror = function () {
-        console.log(`GIF 로드 실패: ${gifSrc}, PNG 시도: ${pngSrc}`);
-        image.onerror = null; // 무한 루프 방지
-        image.src = pngSrc;
-    };
-
-    // 이미지 로드 성공 처리
-    image.onload = function() {
-        console.log(`이미지 로드 성공: ${image.src}`);
-    };
-
-    image.src = gifSrc;
-
-    switch (filename) {
-        case 'ang': statusText.textContent = '상태: 화남'; break;
-        case 'cold': statusText.textContent = '상태: 추움'; break;
-        case 'hap': statusText.textContent = '상태: 행복'; break;
-        case 'sad': statusText.textContent = '상태: 슬픔'; break;
-        case 'sup': statusText.textContent = '상태: 놀람'; break;
-        default: statusText.textContent = '상태: 스티브는 아무렇지 않은 것 같습니다.';
-    }
-}
-  
     function resetChat() {
       currentChapter = 1;
       boxOpened = false; // 리셋 시 상자 상태 초기화
@@ -510,49 +620,47 @@ h1, h2, h3 {
   
       //열쇠
       const keyKeywords = ["열쇠", "키", "key"];
-  const doorKeywords = ["문 열기", "문을 열다", "문 열어", "문을 열어", "문을 열어라", "열쇠로 문을", "열쇠로 문 열기"];
-  
-  // 열쇠 발견 처리
-  if (keyKeywords.some(keyword => message.toLowerCase().includes(keyword)) && safeOpened && !hasKey) {
-    hasKey = true;
-    displayMessage('스티브', '열쇠를 찾았어요! 이제 문을 열 수 있을 것 같습니다.', 'steve');
-    return;
-  }
-  
-  // 열쇠로 문 열기 처리
-  if (doorKeywords.some(keyword => message.includes(keyword)) && hasKey) {
-    displayMessage('스티브', '열쇠로 문을 열었어요! 우리는 탈출에 성공했습니다!', 'steve');
-    setTimeout(() => showClearScreen(), 1500);
-    return;
-  }
-  // 기존 fetch 호출 및 나머지 코드 유지...
+      const doorKeywords = ["문 열기", "문을 열다", "문 열어", "문을 열어", "문을 열어라", "열쇠로 문을", "열쇠로 문 열기"];
+      
+      // 열쇠 발견 처리
+      if (keyKeywords.some(keyword => message.toLowerCase().includes(keyword)) && safeOpened && !hasKey) {
+        hasKey = true;
+        displayMessage('스티브', '열쇠를 찾았어요! 이제 문을 열 수 있을 것 같습니다.', 'steve');
+        return;
+      }
+      
+      // 열쇠로 문 열기 처리
+      if (doorKeywords.some(keyword => message.includes(keyword)) && hasKey) {
+        displayMessage('스티브', '열쇠로 문을 열었어요! 우리는 탈출에 성공했습니다!', 'steve');
+        setTimeout(() => showClearScreen(), 1500);
+        return;
+      }
 
-// Clear 화면 표시 함수 추가
-function showClearScreen() {
-  const overlay = document.getElementById("chapter-transition-overlay");
-  const text = document.getElementById("chapter-transition-text");
-  const nextBtn = document.getElementById("next-chapter-btn");
-  
-  // 텍스트 변경
-  text.textContent = "CLEAR";
-  nextBtn.textContent = "다음 챕터로 ▶";
-  
-  // 클리어 스타일 적용 (CSS 클래스 추가)
-  overlay.classList.add('clear-screen');
-  
-  // 오버레이 표시
-  overlay.style.display = 'flex';
-  setTimeout(() => {
-    overlay.style.opacity = 1;
-    overlay.style.pointerEvents = 'auto';
-    
-    // 텍스트 애니메이션 리셋 및 재시작
-    text.style.animation = 'none';
-    text.offsetHeight; // 리플로우 트리거
-    text.style.animation = 'slideIn 1.5s forwards';
-  }, 10);
-};
-
+      // Clear 화면 표시 함수 추가
+      function showClearScreen() {
+        const overlay = document.getElementById("chapter-transition-overlay");
+        const text = document.getElementById("chapter-transition-text");
+        const nextBtn = document.getElementById("next-chapter-btn");
+        
+        // 텍스트 변경
+        text.textContent = "CLEAR";
+        nextBtn.textContent = "다음 챕터로 ▶";
+        
+        // 클리어 스타일 적용 (CSS 클래스 추가)
+        overlay.classList.add('clear-screen');
+        
+        // 오버레이 표시
+        overlay.style.display = 'flex';
+        setTimeout(() => {
+          overlay.style.opacity = 1;
+          overlay.style.pointerEvents = 'auto';
+          
+          // 텍스트 애니메이션 리셋 및 재시작
+          text.style.animation = 'none';
+          text.offsetHeight; // 리플로우 트리거
+          text.style.animation = 'slideIn 1.5s forwards';
+        }, 10);
+      }
 
       // 금고 또는 퍼즐 키워드에 대한 특수 처리 추가
       const puzzleKeywords = ["금고", "퍼즐", "버튼", "버튼을 누르다", "누르기", "버튼 퍼즐", "비밀번호", "비밀"];
@@ -586,6 +694,7 @@ function showClearScreen() {
       }
   
       console.log("현재 챕터:", currentChapter); 
+      console.log("플레이어 이름:", getPlayerName());
   
       let serverURL = '';
       if (currentChapter === 1) {
@@ -593,14 +702,17 @@ function showClearScreen() {
       } else if (currentChapter === 2) {
         serverURL = 'http://localhost:3002/chapter2';
       } else if (currentChapter === 3) {
-        serverURL = 'http://localhost:3003/chapter3';
+        serverURL = '/index3.html';
       }
   
       try {
         const res = await fetch(serverURL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message, name: playerName })
+          body: JSON.stringify({ 
+            message, 
+            name: getPlayerName() // 현재 플레이어 이름 전송
+          })
         });
   
         const data = await res.json();
@@ -609,7 +721,10 @@ function showClearScreen() {
         if (!Array.isArray(data.message)) {
           displayMessage('스티브', data.message, 'steve');
           if (data.message === "대화를 이어갈 수 없다는 게 슬프네요.") {
-            showGameOverScreen();
+            // 3초 후에 게임 오버 화면 표시
+            setTimeout(() => {
+              showGameOverScreen();
+            }, 3000);
           }
         } else {
           data.message.forEach((msg) => {
@@ -629,8 +744,15 @@ function showClearScreen() {
             if (msg.type === 'steve' && msg.text.includes('책장이... 문이였네요...! 저기 뭐가 보이는 것 같은데요?')) {
               setTimeout(() => showOverlayAndButton(3), 1000);
             }
+            if (msg.type === 'steve' && msg.text.includes('책장이... 문이였네요...! 저기 뭐가 보이는 것 같은데요?')) {
+              setTimeout(() => showOverlayAndButton(3), 1500);
+            }
+
             if (msg.type === 'steve' && msg.text === "대화를 이어갈 수 없다는 게 슬프네요.") {
-              showGameOverScreen();
+              // 3초 후에 게임 오버 화면 표시
+              setTimeout(() => {
+                showGameOverScreen();
+              }, 3000);
             }
           });
         }
@@ -805,6 +927,31 @@ function showClearScreen() {
       currentSequence = [];
     }
   
+    // 페이지 로드 시 실행되는 함수들
+    window.onload = async () => {
+        // 플레이어 이름이 설정되어 있다면 표시
+        const storedName = localStorage.getItem('playerName');
+        if (storedName && storedName !== '플레이어') {
+            playerName = storedName;
+            showTextForFiveSeconds();
+        }
+        
+        // 서버에서 플레이어 이름 동기화 시도 (선택사항)
+        try {
+            const response = await fetch(`http://localhost:300${currentChapter}/sync-name`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: getPlayerName() })
+            });
+            const data = await response.json();
+            if (data.success) {
+                console.log('서버와 플레이어 이름 동기화 완료');
+            }
+        } catch (error) {
+            console.log('서버 동기화 실패 (정상 동작)', error.message);
+        }
+    };
+  
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById("next-chapter-btn").addEventListener("click", () => {
         switchChapter(nextChapterNumber);
@@ -815,11 +962,31 @@ function showClearScreen() {
       });
     });
   
-    document.addEventListener('click', (e) => {
-      const dd = document.getElementById("chapterList");
-      const btn = document.getElementById("chapterBtn");
-      if (!btn.contains(e.target) && !dd.contains(e.target)) dd.style.display = 'none';
-    });
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById("next-chapter-btn").addEventListener("click", () => {
+    // 🔥 Chapter 3으로 가는 경우
+    if (nextChapterNumber === 3) {
+      console.log('Chapter 3으로 이동 시도...'); // 디버깅용
+      localStorage.setItem('playerName', getPlayerName());
+      window.location.href = 'http://localhost:3003/chapter3';
+      return;
+    }
+    
+    // 기존 로직
+    switchChapter(nextChapterNumber);
+  });
+  
+  document.getElementById("retry-btn").addEventListener("click", () => {
+    location.reload();
+  });
+});
+
+    // 전역으로 함수들을 노출 (다른 스크립트에서 사용 가능)
+    window.gameUtils = {
+        setPlayerName,
+        getPlayerName,
+        showTextForFiveSeconds
+    };
   </script>
 </body>
 </html>
