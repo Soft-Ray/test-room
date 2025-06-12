@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>게임 시작 화면</title>
+  <title>이름 입력 화면</title>
   <style>
     @font-face {
       font-family: 'Neo둥근모';
@@ -11,11 +11,11 @@
       font-weight: normal;
       font-style: normal;
     }
-
+    
     * {
       font-family: 'Neo둥근모', sans-serif;
     }
-
+    
     body {
       margin: 0;
       padding: 0;
@@ -24,271 +24,92 @@
       align-items: center;
       height: 100vh;
       overflow: hidden;
-      background: none;
+      background-color: black;
     }
-
-    .background {
+    
+    .name-input-container {
       position: fixed;
       top: 0;
       left: 0;
       width: 100vw;
       height: 100vh;
-      background-image: url('Save-steve-main.gif');
-      background-size: contain;
-      background-position: center;
-      background-repeat: no-repeat;
-      z-index: -1;
-      background-color: #000000;
-    }
-
-    .btn-story {
-      position: fixed;
-      bottom: 10%;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 1vw 2vw;
-      font-size: 1.5vw;
-      color: #fff;
-      text-decoration: none;
-      border-radius: 5px;
-      background-color: #4682b4;
-      border: 2px solid #4169e1;
-      box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
-      transition: all 0.2s ease;
-      z-index: 10;
-    }
-
-    .story-box {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background-color: rgba(0, 0, 0, 0.95);
-      color: white;
-      font-size: 2vw;
-      display: none;
+      background-color: rgba(0, 0, 0, 1); /* 배경 검은색 */
+      display: flex;
+      justify-content: center;
+      align-items: center;
       text-align: center;
-      padding: 10% 5%;
-      box-sizing: border-box;
-      z-index: 100;
-    }
-
-    .close-btn {
-      position: absolute;
-      top: 20px;
-      right: 30px;
-      font-size: x-large;
-      cursor: pointer;
-      color: white;
-      font-weight: bold;
-    }
-
-    .story-text {
-      margin-top: 10vh;
-    }
-
-    .story-text1 {
-      margin-top: 5vh;
+      z-index: 101;
       color: white;
       font-size: 2vw;
     }
-
-    .story-footer {
-      display: inline-flex;
-      margin-top: 5vh;
-      font-size: 1.5vw;
-      color: #ffcc00;
-      text-align: left;
-    }
-
-    .start-btn {
-      display: inline-flex;
-      margin-top: 4vh;
-      padding: 1vw 2vw;
-      font-size: 1.5vw;
-      color: #000;
-      background-color: #ffcc00;
+    
+    .name-input-container input {
+      padding: 10px;
+      font-size: 1.2vw;
+      border-radius: 5px;
       border: none;
-      border-radius: 10px;
-      text-decoration: none;
-      box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
-      transition: all 0.2s ease;
-    }
-
-    .start-btn:hover {
-      background-color: #ffe066;
-    }
-
-    .settings-icon {
-      filter: invert(100%) sepia(0%) saturate(0%) hue-rotate(180deg);
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      width: 50px;
-      height: 50px;
-      cursor: pointer;
-      z-index: 50;
-    }
-
-    .volume-control {
-      position: fixed;
-      top: 30%;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 300px;
-      height: 100px;
-      background: rgba(0, 0, 0, 0.9);
-      padding: 40px;
-      border-radius: 10px;
-      text-align: left;
-      color: white;
-      font-size: large;
-      display: none;
-      z-index: 90;
-    }
-
-    .volume-slider {
-      width: 60%;
-    }
-
-    .volume-display {
-      display: inline-block;
-      width: 50px;
-      text-align: right;
-    }
-
-    .toggle-buttons {
       margin-top: 10px;
     }
-
-    .toggle-buttons button {
+    
+    .name-submit-btn {
       padding: 10px 20px;
-      margin: 0 5px;
-      font-size: large;
+      font-size: 1.2vw;
       border: none;
-      cursor: pointer;
+      background-color: #ffcc00;
+      color: #000;
       border-radius: 5px;
-      transition: background 0.2s;
-    }
-
-    .on-button {
-      background: #4CAF50;
-      color: white;
-    }
-
-    .off-button {
-      background: #ff6347;
-      color: white;
-    }
-
-    .on-button:hover {
-      background: #45a049;
-    }
-
-    .off-button:hover {
-      background: #e74c3c;
+      cursor: pointer;
+      margin-left: 10px;
     }
   </style>
 </head>
 <body>
-  <div class="background"></div>
-
-  <a href="#" class="btn-story">스토리</a>
-
-  <div class="story-box">
-    <span class="close-btn story-close">X</span>
-    <div class="story-text">
-      어느 날, 당신이 STEVE와 매칭된다.<br>
-      어두운 공간 속에 갇힌 것 같은 STEVE는 탈출을 간절히 원한다.<br>
-      그의 운명을 바꿀 열쇠는 바로 당신의 손에 달려 있다!<br>
-      STEVE를 탈출시킬 수 있을까?
-    </div>
-    <div class="story-footer">
-      * 이 게임은 매칭 선택을 누르신 이후에는 키보드로만 즐기실 수 있는 게임입니다.<br>
-      스티브와 이야기 하실 때는 구체적으로 질문하세요.<br>
-      eX) 상자 열자(x) 상자를 열어보자 (o)
-    </div>
-    <div class="story-text1">
-      그럼 스티브의 탈출을 위한 매칭을 시작해봅시다.
-    </div>
-    <a href="index0-1.html" class="start-btn" id="start-game-btn">게임 시작하기</a>
-  </div>
-
-  <img src="free-icon-font-settings-3917051.svg" class="settings-icon" alt="설정">
-
-  <div class="volume-control"> 음량 조절:
-    <span class="close-btn volume-close">X</span>
-    <span class="volume-display">20%</span>
-    <input type="range" class="volume-slider" min="0" max="1" step="0.1" value="0.2">
-    <div class="toggle-buttons"> 음악 On/Off:
-      <button class="on-button">ON</button>
-      <button class="off-button">OFF</button>
+  <div class="name-input-container" id="name-input-container">
+    <div>
+      <label for="name">이름을 입력해주세요</label>
+      <br>
+      <br>
+      <input type="text" id="name" placeholder="이름 입력" />
+      <button class="name-submit-btn" id="name-submit-btn">확인</button>
     </div>
   </div>
-
-  <audio id="background-music" src="40cd6aed.mp3" loop></audio>
 
   <script>
-    const music = document.getElementById('background-music');
-    const volumeSlider = document.querySelector('.volume-slider');
-    const volumeDisplay = document.querySelector('.volume-display');
-    const settingsIcon = document.querySelector('.settings-icon');
-    const volumeControl = document.querySelector('.volume-control');
-    const onButton = document.querySelector('.on-button');
-    const offButton = document.querySelector('.off-button');
-    const storyBox = document.querySelector('.story-box');
-    const storyButton = document.querySelector('.btn-story');
-    const storyCloseButton = document.querySelector('.story-close');
-    const startGameBtn = document.getElementById('start-game-btn');
-  
-    document.addEventListener("DOMContentLoaded", () => {
-      music.volume = 0.2;
-      music.play().catch(error => console.warn("자동 재생 차단:", error));
+    const nameSubmitBtn = document.getElementById('name-submit-btn');
+    const nameInput = document.getElementById('name');
+    const nameInputContainer = document.getElementById('name-input-container');
+    
+    nameSubmitBtn.addEventListener('click', () => {
+      const name = nameInput.value;
+      if (name) {
+        // localStorage에 이름 저장
+        localStorage.setItem('playerName', name);
+        
+        // 백그라운드에서 이름 정보를 서버에 미리 전송
+        fetch('http://localhost:3003/chapter3', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: name, message: '' })
+        }).then(response => {
+          return response.json();
+        }).then(data => {
+          console.log('서버 응답:', data);
+          // 이름 전송 성공 후 메인 게임 페이지로 이동
+          window.location.href = 'http://localhost:3000';
+        }).catch(error => {
+          console.error('서버 요청 오류:', error);
+          // 오류가 발생해도 메인 페이지로 이동
+          window.location.href = 'http://localhost:3000';
+        });
+      } else {
+        alert('이름을 입력해주세요.');
+      }
     });
-  
-    volumeSlider.addEventListener('input', (event) => {
-      music.volume = event.target.value;
-      volumeDisplay.textContent = Math.round(event.target.value * 100) + '%';
-    });
-  
-    onButton.addEventListener('click', () => {
-      music.volume = 0.2;
-      music.play();
-      volumeSlider.value = 0.2;
-      volumeDisplay.textContent = '20%';
-      onButton.style.background = "#2ecc71";
-      offButton.style.background = "#95a5a6";
-    });
-  
-    offButton.addEventListener('click', () => {
-      music.volume = 0;
-      music.pause();
-      volumeSlider.value = 0;
-      volumeDisplay.textContent = '0%';
-      offButton.style.background = "#ff6347";
-      onButton.style.background = "#95a5a6";
-    });
-  
-    settingsIcon.addEventListener('click', () => {
-      volumeControl.style.display = 'block';
-    });
-  
-    document.querySelector('.volume-close').addEventListener('click', () => {
-      volumeControl.style.display = 'none';
-    });
-  
-    storyButton.addEventListener('click', (event) => {
-      event.preventDefault();
-      storyBox.style.display = 'block';
-    });
-
-    storyCloseButton.addEventListener('click', () => {
-      storyBox.style.display = 'none';
-    });
-
-    startGameBtn.addEventListener('click', () => {
-      // 게임 시작 코드 추가 (이벤트 핸들링 코드 필요)
+    
+    nameInput.addEventListener('keypress', (event) => {
+      if (event.key === 'Enter') {
+        nameSubmitBtn.click(); // 클릭 이벤트를 강제로 호출하여 제출
+      }
     });
   </script>
 </body>
