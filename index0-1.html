@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>이름 입력 화면</title>
+  <style>
+    @font-face {
+      font-family: 'Neo둥근모';
+      src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2107@1.1/NeoDunggeunmo.woff') format('woff');
+      font-weight: normal;
+      font-style: normal;
+    }
+        
+    * {
+      font-family: 'Neo둥근모', sans-serif;
+    }
+        
+    body {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      background-color: black;
+    }
+        
+    .name-input-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 1);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      z-index: 101;
+      color: white;
+      font-size: 2vw;
+    }
+        
+    .name-input-container input {
+      padding: 10px;
+      font-size: 1.2vw;
+      border-radius: 5px;
+      border: none;
+      margin-top: 10px;
+    }
+        
+    .name-submit-btn {
+      padding: 10px 20px;
+      font-size: 1.2vw;
+      border: none;
+      background-color: #ffcc00;
+      color: #000;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+
+    .name-submit-btn:disabled {
+      background-color: #666;
+      cursor: not-allowed;
+    }
+
+    .loading {
+      margin-top: 20px;
+      color: #ffcc00;
+      font-size: 1vw;
+    }
+
+    .status {
+      margin-top: 10px;
+      font-size: 0.8vw;
+      color: #ccc;
+    }
+  </style>
+</head>
+<body>
+  <div class="name-input-container" id="name-input-container">
+    <div>
+      <label for="name">이름을 입력해주세요</label>
+      <br>
+      <br>
+      <input type="text" id="name" placeholder="이름 입력" />
+      <button class="name-submit-btn" id="name-submit-btn">확인</button>
+      <div class="loading" id="loading" style="display: none;">
+        이름을 모든 서버에 전송 중...
+      </div>
+      <div class="status" id="status"></div>
+    </div>
+  </div>
+  
+  <script>
+    const nameSubmitBtn = document.getElementById('name-submit-btn');
+    const nameInput = document.getElementById('name');
+    const nameInputContainer = document.getElementById('name-input-container');
+    const loading = document.getElementById('loading');
+    const status = document.getElementById('status');
+        
+    // 🔥 모든 서버에 이름을 전송하는 함수
+    async function sendNameToAllServers(name) {
+      const servers = [
+        { url: 'http://localhost:3000/set-name', name: 'Server 1' },
+        { url: 'http://localhost:3002/set-name', name: 'Server 2' },
+        { url: 'http://localhost:3003/set-name', name: 'Server 3' }
+      ];
+
+      const results = [];
+      
+      for (const server of servers) {
+        try {
+          console.log(`📤 ${server.name}에 이름 전송 중: ${name}`);
+          status.textContent = `${server.name}에 전송 중...`;
+          
+          const response = await fetch(server.url, {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-cache'
+            },
+            body: JSON.stringify({ name: name })
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            console.log(`✅ ${server.name} 성공:`, data);
+            results.push({ server: server.name, success: true, data });
+          } else {
+            console.log(`❌ ${server.name} 실패: ${response.status}`);
+            results.push({ server: server.name, success: false, error: `HTTP ${response.status}` });
+          }
+        } catch (error) {
+          console.log(`❌ ${server.name} 오류:`, error.message);
+          results.push({ server: server.name, success: false, error: error.message });
+        }
+        
+        // 각 서버 요청 사이에 잠시 대기
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+
+      return results;
+    }
+
+    nameSubmitBtn.addEventListener('click', async () => {
+      const name = nameInput.value.trim();
+      if (!name) {
+        alert('이름을 입력해주세요.');
+        return;
+      }
+
+      // UI 상태 변경
+      nameSubmitBtn.disabled = true;
+      nameSubmitBtn.textContent = '전송 중...';
+      loading.style.display = 'block';
+
+      try {
+        console.log('🚀 이름 전송 시작:', name);
+        
+        // localStorage에 이름 저장
+        localStorage.setItem('playerName', name);
+        
+        // 모든 서버에 이름 전송
+        const results = await sendNameToAllServers(name);
+        
+        // 결과 확인
+        const successCount = results.filter(r => r.success).length;
+        const failCount = results.filter(r => !r.success).length;
+        
+        console.log(`📊 전송 결과 - 성공: ${successCount}, 실패: ${failCount}`);
+        
+        if (successCount > 0) {
+          status.textContent = `${successCount}개 서버에 성공적으로 전송됨`;
+          status.style.color = '#90EE90';
+          
+          // 성공한 경우 메인 게임 페이지로 이동
+          setTimeout(() => {
+            console.log('🎮 메인 게임으로 이동');
+            window.location.href = 'http://localhost:3000';
+          }, 1500);
+          
+        } else {
+          // 모든 서버 전송이 실패한 경우
+          status.textContent = '모든 서버 전송 실패. 그래도 게임을 시작합니다.';
+          status.style.color = '#FFB6C1';
+          
+          setTimeout(() => {
+            window.location.href = 'http://localhost:3000';
+          }, 2000);
+        }
+        
+      } catch (error) {
+        console.error('❌ 전체 프로세스 오류:', error);
+        status.textContent = '오류 발생. 게임을 시작합니다.';
+        status.style.color = '#FFB6C1';
+        
+        setTimeout(() => {
+          window.location.href = 'http://localhost:3000';
+        }, 2000);
+      } finally {
+        // UI 상태 복구 (이동하기 전까지만)
+        setTimeout(() => {
+          nameSubmitBtn.disabled = false;
+          nameSubmitBtn.textContent = '확인';
+          loading.style.display = 'none';
+        }, 3000);
+      }
+    });
+        
+    nameInput.addEventListener('keypress', (event) => {
+      if (event.key === 'Enter' && !nameSubmitBtn.disabled) {
+        nameSubmitBtn.click();
+      }
+    });
+
+    // 페이지 로드 시 이미 저장된 이름이 있는지 확인
+    window.addEventListener('load', () => {
+      const savedName = localStorage.getItem('playerName');
+      if (savedName && savedName !== 'playerName') {
+        nameInput.value = savedName;
+        console.log('💾 저장된 이름 로드:', savedName);
+      }
+      
+      nameInput.focus(); // 입력 필드에 포커스
+    });
+
+    // 🔥 디버깅용: 서버 상태 확인 함수 (개발자 도구에서 사용 가능)
+    window.checkServerStatus = async function() {
+      const servers = [
+        'http://localhost:3000/status',
+        'http://localhost:3002/status', 
+        'http://localhost:3003/status'
+      ];
+      
+      for (const url of servers) {
+        try {
+          const response = await fetch(url);
+          if (response.ok) {
+            const data = await response.json();
+            console.log(`${url}:`, data);
+          }
+        } catch (error) {
+          console.log(`${url}: 연결 실패`);
+        }
+      }
+    };
+  </script>
+</body>
+</html>
