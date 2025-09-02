@@ -259,8 +259,8 @@ app.post('/sync-name', async (req, res) => {
 });
 
 export function start() {
-  app.listen(port, () => {
-    console.log(`✅ Chapter 3 server is running on http://localhost:${port}`);
+app.listen(port, '0.0.0.0', () => {
+  console.log(`✅ Chapter 3 server is running on http://192.168.0.10:${port}`);
     console.log(`🖼️ Images available at: http://localhost:${port}/images/`);
     console.log(`📄 Main page: http://localhost:${port}/`);
   });
