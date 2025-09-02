@@ -24,7 +24,7 @@
       align-items: center;
       height: 100vh;
       overflow: hidden;
-      background: none;
+      background: #000000; /* 🔥 기본 배경색 */
     }
 
     .background {
@@ -33,13 +33,20 @@
       left: 0;
       width: 100vw;
       height: 100vh;
-      background-image: url('Save-steve-main.gif');
+      /* 🔥 여러 가능한 이미지 경로를 CSS fallback으로 처리 */
+      background-image: 
+        url('Save-steve-main.gif'),
+        url('images/Save-steve-main.gif'),
+        url('./Save-steve-main.gif'),
+        url('./images/Save-steve-main.gif');
       background-size: contain;
       background-position: center;
       background-repeat: no-repeat;
-      z-index: -1;
       background-color: #000000;
+      z-index: -1;
     }
+
+    /* 🔥 배경 이미지가 로드되지 않을 때를 위한 대체 스타일 제거됨 */
 
     .btn-story {
       position: fixed;
@@ -56,6 +63,12 @@
       box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
       transition: all 0.2s ease;
       z-index: 10;
+    }
+
+    .btn-story:hover {
+      background-color: #5a9bd4;
+      transform: translateX(-50%) translateY(2px);
+      box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
     }
 
     .story-box {
@@ -82,6 +95,10 @@
       cursor: pointer;
       color: white;
       font-weight: bold;
+    }
+
+    .close-btn:hover {
+      color: #ff6347;
     }
 
     .story-text {
@@ -114,10 +131,13 @@
       text-decoration: none;
       box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
       transition: all 0.2s ease;
+      cursor: pointer;
     }
 
     .start-btn:hover {
       background-color: #ffe066;
+      transform: translateY(2px);
+      box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
     }
 
     .settings-icon {
@@ -129,6 +149,11 @@
       height: 50px;
       cursor: pointer;
       z-index: 50;
+      transition: transform 0.2s ease;
+    }
+
+    .settings-icon:hover {
+      transform: rotate(45deg);
     }
 
     .volume-control {
@@ -189,10 +214,23 @@
     .off-button:hover {
       background: #e74c3c;
     }
+
+    /* 🔥 디버깅을 위한 스타일 추가 */
+    .debug-info {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      color: white;
+      font-size: 12px;
+      background: rgba(0,0,0,0.5);
+      padding: 5px;
+      border-radius: 3px;
+      z-index: 1000;
+    }
   </style>
 </head>
 <body>
-  <div class="background"></div>
+  <div class="background" id="background"></div>
 
   <a href="#" class="btn-story">스토리</a>
 
@@ -229,6 +267,11 @@
 
   <audio id="background-music" src="40cd6aed.mp3" loop></audio>
 
+  <!-- 🔥 디버깅 정보 표시 -->
+  <div class="debug-info" id="debug-info">
+    이미지 로딩 상태: 확인 중...
+  </div>
+
   <script>
     const music = document.getElementById('background-music');
     const volumeSlider = document.querySelector('.volume-slider');
@@ -241,8 +284,63 @@
     const storyButton = document.querySelector('.btn-story');
     const storyCloseButton = document.querySelector('.story-close');
     const startGameBtn = document.getElementById('start-game-btn');
+    const debugInfo = document.getElementById('debug-info');
+    const background = document.getElementById('background');
+
+    // 🔥 이미지 로드 확인 함수
+    function checkBackgroundImage() {
+      const possiblePaths = [
+        'Save-steve-main.gif',
+        'images/Save-steve-main.gif',
+        './Save-steve-main.gif',
+        './images/Save-steve-main.gif',
+        'Save-steve.gif', // 🔥 다른 이름으로도 시도
+        'images/Save-steve.gif'
+      ];
+
+      let loadedPath = null;
+      let currentIndex = 0;
+
+      function tryLoadImage() {
+        if (currentIndex >= possiblePaths.length) {
+          debugInfo.textContent = '이미지 로딩 실패: 모든 경로 시도됨';
+          debugInfo.style.color = '#ff6347';
+          return;
+        }
+
+        const testImage = new Image();
+        const currentPath = possiblePaths[currentIndex];
+        
+        testImage.onload = function() {
+          console.log(`✅ 이미지 로드 성공: ${currentPath}`);
+          background.style.backgroundImage = `url('${currentPath}')`;
+          debugInfo.textContent = `이미지 로드 성공: ${currentPath}`;
+          debugInfo.style.color = '#4CAF50';
+          loadedPath = currentPath;
+          
+          // 3초 후 디버그 정보 숨기기
+          setTimeout(() => {
+            debugInfo.style.display = 'none';
+          }, 3000);
+        };
+
+        testImage.onerror = function() {
+          console.log(`❌ 이미지 로드 실패: ${currentPath}`);
+          debugInfo.textContent = `이미지 로드 실패: ${currentPath} (${currentIndex + 1}/${possiblePaths.length})`;
+          currentIndex++;
+          tryLoadImage();
+        };
+
+        testImage.src = currentPath;
+      }
+
+      tryLoadImage();
+    }
   
     document.addEventListener("DOMContentLoaded", () => {
+      // 🔥 배경 이미지 로드 확인
+      checkBackgroundImage();
+      
       music.volume = 0.2;
       music.play().catch(error => console.warn("자동 재생 차단:", error));
     });
@@ -287,8 +385,16 @@
       storyBox.style.display = 'none';
     });
 
-    startGameBtn.addEventListener('click', () => {
-      // 게임 시작 코드 추가 (이벤트 핸들링 코드 필요)
+    // 🔥 게임 시작 버튼을 index0-1.html로 연결
+    startGameBtn.addEventListener('click', (event) => {
+      event.preventDefault();
+      window.location.href = 'index0-1.html';
+    });
+
+    // 🔥 배경 클릭시 디버그 정보 다시 표시
+    background.addEventListener('click', () => {
+      debugInfo.style.display = 'block';
+      checkBackgroundImage();
     });
   </script>
 </body>
