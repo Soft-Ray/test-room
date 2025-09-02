@@ -95,26 +95,31 @@
     </div>
   </div>
   
-  <script>
+<script>
     const nameSubmitBtn = document.getElementById('name-submit-btn');
     const nameInput = document.getElementById('name');
     const nameInputContainer = document.getElementById('name-input-container');
     const loading = document.getElementById('loading');
     const status = document.getElementById('status');
+    
+    // 🔥 메모리에 이름 저장 (localStorage 대신)
+    let savedPlayerName = '플레이어';
         
-    // 🔥 모든 서버에 이름을 전송하는 함수
+    // 🔥 모든 서버에 이름을 전송하는 함수 - 개선된 버전
     async function sendNameToAllServers(name) {
+      console.log(`🚀 모든 서버에 이름 전송 시작: "${name}"`);
+      
       const servers = [
-        { url: 'http://localhost:3000/set-name', name: 'Server 1' },
-        { url: 'http://localhost:3002/set-name', name: 'Server 2' },
-        { url: 'http://localhost:3003/set-name', name: 'Server 3' }
+        { url: 'http://localhost:4001/set-name', name: 'Server 1 (Chapter 1)' },
+        { url: 'http://localhost:4002/set-name', name: 'Server 2 (Chapter 2)' },
+        { url: 'http://localhost:4003/set-name', name: 'Server 3 (Chapter 3)' }
       ];
 
       const results = [];
       
       for (const server of servers) {
         try {
-          console.log(`📤 ${server.name}에 이름 전송 중: ${name}`);
+          console.log(`📤 ${server.name}에 이름 전송 중: "${name}"`);
           status.textContent = `${server.name}에 전송 중...`;
           
           const response = await fetch(server.url, {
@@ -135,7 +140,7 @@
             results.push({ server: server.name, success: false, error: `HTTP ${response.status}` });
           }
         } catch (error) {
-          console.log(`❌ ${server.name} 오류:`, error.message);
+          console.log(`❌ ${server.name} 연결 오류:`, error.message);
           results.push({ server: server.name, success: false, error: error.message });
         }
         
@@ -146,10 +151,39 @@
       return results;
     }
 
+    // 🔥 추가: 서버 동기화 함수
+    async function syncNameToAllServers(name) {
+      console.log(`🔄 모든 서버에 이름 동기화: "${name}"`);
+      
+      const servers = [
+        { url: 'http://localhost:4001/sync-name', name: 'Server 1' },
+        { url: 'http://localhost:4002/sync-name', name: 'Server 2' },
+        { url: 'http://localhost:4003/sync-name', name: 'Server 3' }
+      ];
+
+      const syncPromises = servers.map(server => 
+        fetch(server.url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: name })
+        }).then(response => {
+          if (response.ok) {
+            console.log(`✅ ${server.name} 동기화 성공`);
+          } else {
+            console.log(`❌ ${server.name} 동기화 실패`);
+          }
+        }).catch(error => {
+          console.log(`❌ ${server.name} 동기화 오류:`, error.message);
+        })
+      );
+
+      await Promise.allSettled(syncPromises);
+    }
+
     nameSubmitBtn.addEventListener('click', async () => {
       const name = nameInput.value.trim();
-      if (!name) {
-        alert('이름을 입력해주세요.');
+      if (!name || name === '플레이어') {
+        alert('유효한 이름을 입력해주세요.');
         return;
       }
 
@@ -159,13 +193,17 @@
       loading.style.display = 'block';
 
       try {
-        console.log('🚀 이름 전송 시작:', name);
+        console.log(`🚀 이름 전송 프로세스 시작: "${name}"`);
         
-        // localStorage에 이름 저장
-        localStorage.setItem('playerName', name);
+        // 🔥 메모리에 이름 저장
+        savedPlayerName = name;
+        console.log(`💾 메모리에 이름 저장됨: "${savedPlayerName}"`);
         
         // 모든 서버에 이름 전송
         const results = await sendNameToAllServers(name);
+        
+        // 동기화도 실행
+        await syncNameToAllServers(name);
         
         // 결과 확인
         const successCount = results.filter(r => r.success).length;
@@ -177,37 +215,39 @@
           status.textContent = `${successCount}개 서버에 성공적으로 전송됨`;
           status.style.color = '#90EE90';
           
-          // 성공한 경우 메인 게임 페이지로 이동
+          // 🔥 이름을 URL 파라미터로 전달하여 메인 게임으로 이동
           setTimeout(() => {
-            console.log('🎮 메인 게임으로 이동');
-            window.location.href = 'http://localhost:3000';
+            console.log(`🎮 메인 게임으로 이동 - 이름: "${name}"`);
+            window.location.href = `http://localhost:4001?playerName=${encodeURIComponent(name)}`;
           }, 1500);
           
         } else {
-          // 모든 서버 전송이 실패한 경우
-          status.textContent = '모든 서버 전송 실패. 그래도 게임을 시작합니다.';
+          // 모든 서버 전송이 실패한 경우에도 게임 시작
+          status.textContent = '서버 연결 실패했지만 게임을 시작합니다.';
           status.style.color = '#FFB6C1';
           
           setTimeout(() => {
-            window.location.href = 'http://localhost:3000';
+            console.log(`🎮 메인 게임으로 이동 (서버 실패) - 이름: "${name}"`);
+            window.location.href = `http://localhost:4001?playerName=${encodeURIComponent(name)}`;
           }, 2000);
         }
         
       } catch (error) {
         console.error('❌ 전체 프로세스 오류:', error);
-        status.textContent = '오류 발생. 게임을 시작합니다.';
+        status.textContent = '오류 발생했지만 게임을 시작합니다.';
         status.style.color = '#FFB6C1';
         
         setTimeout(() => {
-          window.location.href = 'http://localhost:3000';
+          console.log(`🎮 메인 게임으로 이동 (오류 발생) - 이름: "${nameInput.value.trim()}"`);
+          window.location.href = `http://localhost:4001?playerName=${encodeURIComponent(nameInput.value.trim())}`;
         }, 2000);
       } finally {
-        // UI 상태 복구 (이동하기 전까지만)
+        // UI 상태 복구는 페이지 이동 전까지만
         setTimeout(() => {
           nameSubmitBtn.disabled = false;
           nameSubmitBtn.textContent = '확인';
           loading.style.display = 'none';
-        }, 3000);
+        }, 4001);
       }
     });
         
@@ -217,23 +257,41 @@
       }
     });
 
-    // 페이지 로드 시 이미 저장된 이름이 있는지 확인
+    // 🔥 페이지 로드 시 이름 처리 개선
     window.addEventListener('load', () => {
-      const savedName = localStorage.getItem('playerName');
-      if (savedName && savedName !== 'playerName') {
-        nameInput.value = savedName;
-        console.log('💾 저장된 이름 로드:', savedName);
+      console.log('📄 페이지 로드됨');
+      
+      // URL 파라미터에서 이름 가져오기
+      const urlParams = new URLSearchParams(window.location.search);
+      const nameFromUrl = urlParams.get('playerName');
+      
+      let finalName = '';
+      
+      if (nameFromUrl && nameFromUrl !== 'playerName' && nameFromUrl.trim() !== '') {
+        finalName = decodeURIComponent(nameFromUrl);
+        savedPlayerName = finalName;
+        console.log(`💾 URL에서 이름 로드: "${finalName}"`);
+      } else if (savedPlayerName && savedPlayerName !== '플레이어') {
+        finalName = savedPlayerName;
+        console.log(`💾 메모리에서 이름 로드: "${finalName}"`);
+      }
+      
+      if (finalName) {
+        nameInput.value = finalName;
+        console.log(`📝 입력 필드에 이름 설정: "${finalName}"`);
       }
       
       nameInput.focus(); // 입력 필드에 포커스
     });
 
-    // 🔥 디버깅용: 서버 상태 확인 함수 (개발자 도구에서 사용 가능)
-    window.checkServerStatus = async function() {
+    // 🔥 디버깅용: 모든 서버 상태 확인 함수
+    window.checkAllServerStatus = async function() {
+      console.log('🔍 모든 서버 상태 확인 시작');
+      
       const servers = [
-        'http://localhost:3000/status',
-        'http://localhost:3002/status', 
-        'http://localhost:3003/status'
+        'http://localhost:4001/status',
+        'http://localhost:4002/status', 
+        'http://localhost:4003/status'
       ];
       
       for (const url of servers) {
@@ -241,13 +299,49 @@
           const response = await fetch(url);
           if (response.ok) {
             const data = await response.json();
-            console.log(`${url}:`, data);
+            console.log(`✅ ${url}:`, data);
+          } else {
+            console.log(`❌ ${url}: HTTP ${response.status}`);
           }
         } catch (error) {
-          console.log(`${url}: 연결 실패`);
+          console.log(`❌ ${url}: 연결 실패 - ${error.message}`);
         }
       }
     };
+
+    // 🔥 디버깅용: 이름 강제 동기화 함수
+    window.forceSyncName = async function(name) {
+      if (!name) {
+        name = nameInput.value.trim() || savedPlayerName;
+      }
+      console.log(`🔧 강제 이름 동기화: "${name}"`);
+      await syncNameToAllServers(name);
+    };
+
+    // 🔥 글로벌 함수로 이름 접근 가능하게 만들기
+    window.getPlayerName = function() {
+      return savedPlayerName;
+    };
+
+    window.setPlayerName = function(name) {
+      if (name && name.trim() !== '') {
+        savedPlayerName = name.trim();
+        nameInput.value = savedPlayerName;
+        console.log(`📝 이름 수동 설정: "${savedPlayerName}"`);
+        return true;
+      }
+      return false;
+    };
+
+    // 🔥 초기화 함수
+    window.initializeName = function() {
+      console.log(`🔄 이름 초기화 - 현재 저장된 이름: "${savedPlayerName}"`);
+      if (savedPlayerName !== '플레이어') {
+        syncNameToAllServers(savedPlayerName);
+      }
+    };
+
+    console.log('📋 스크립트 로드 완료');
   </script>
 </body>
 </html>
