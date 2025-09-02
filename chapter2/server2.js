@@ -16,12 +16,12 @@ const app = express();
 app.use(cors({
   origin: function (origin, callback) {
     const allowedOrigins = [
-      'http://localhost:4001',
-      'http://localhost:4002', 
-      'http://localhost:4003',
-      'http://127.0.0.1:4001',
-      'http://127.0.0.1:4002',
-      'http://127.0.0.1:4003',
+      'http://localhost:5001',
+      'http://localhost:5002', 
+      'http://localhost:5003',
+      'http://127.0.0.1:5001',
+      'http://127.0.0.1:5002',
+      'http://127.0.0.1:5003',
       'http://127.0.0.1:5500', // 🔥 Live Server 포트 추가
       'http://localhost:5500',  // 🔥 Live Server 포트 추가
       null // 로컬 파일 접근 허용
@@ -194,7 +194,7 @@ function createSystemPrompt() {
 ▶적용되지 않는 문구는 대화를 이어나가지말고 "무슨 말인지 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?"라고 말하세요.
 `;
 }
-/// 🔥 기본 홈페이지 (index.html 제공) - URL 파라미터 처리 강화
+
 app.get('/', (req, res) => {
   const playerNameFromUrl = req.query.playerName;
   if (playerNameFromUrl && playerNameFromUrl.trim() !== '' && playerNameFromUrl !== '플레이어') {
@@ -202,7 +202,7 @@ app.get('/', (req, res) => {
     console.log(`[Server2] URL에서 플레이어 이름 즉시 설정: "${playerName}"`);
   }
   
-  res.sendFile(path.join(__dirname, '..', 'index.html'));
+  res.sendFile(path.join(__dirname, '..', 'server.html'));
 });
 
 // 🔥 플레이어 이름 관련 엔드포인트들 개선
@@ -261,7 +261,7 @@ app.get('/status', (req, res) => {
   console.log(`[Server2] status 요청 - Origin: ${req.get('Origin') || 'null'}`);
   res.json({ 
     server: 'Server2 (Chapter 2)', 
-    port: 4002,
+    port: 5002,
     playerName: playerName,
     chatHistoryLength: chatHistory.length,
     corsEnabled: true,
@@ -759,7 +759,7 @@ app.use((error, req, res, next) => {
 });
 
 // 🔥 서버 시작
-const PORT = 4002;
+const PORT = 5002;
 
 export function start() {
   app.listen(PORT, () => {
