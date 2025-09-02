@@ -443,7 +443,7 @@ h1, h2, h3 {
     let playerName = localStorage.getItem('playerName') || '플레이어';
     let currentPlayerName = playerName; 
     let buttonInputMode = false;
-    let buttonSequence = [];// 서버에서 가져올 플레이어 이름
+    let buttonSequence = [];
 
     function setPlayerName(name) {
         if (name && name.trim() !== '') {
@@ -549,7 +549,6 @@ function switchChapter(chapterNumber) {
     showTextForFiveSeconds();
 }
 
-
     function toggleDropdown() {
         const dropdown = document.getElementById("chapterList");
         if (dropdown) {
@@ -568,7 +567,7 @@ function switchChapter(chapterNumber) {
         const statusText = document.getElementById("statusText");
         const image = document.getElementById("sceneImage");
 
-if (!statusText || !image) return;
+        if (!statusText || !image) return;
 
         let filename = imageSrc.split('/').pop().split('.')[0];
         
@@ -667,7 +666,6 @@ if (!statusText || !image) return;
         hideOverlayAndTransition();
     }
 
-    // 🔥 통합된 메시지 표시 함수
     function displayMessage(author, message, className) {
         const responseBox = document.getElementById("responseBox");
         if (!responseBox) return;
@@ -675,14 +673,11 @@ if (!statusText || !image) return;
         const messageElement = document.createElement("p");
         messageElement.className = `message ${className || 'bot-message'}`;
         
-        // 매개변수가 3개면 기존 방식, 2개면 새로운 방식
         if (className) {
-            // 기존 방식: displayMessage('스티브', '메시지', 'steve')
             messageElement.innerHTML = `<strong>${author}:</strong> ${message}`;
         } else {
-            // 새로운 방식: displayMessage('메시지', isUser)
-            const isUser = message; // 두 번째 매개변수가 isUser
-            const actualMessage = author; // 첫 번째 매개변수가 실제 메시지
+            const isUser = message;
+            const actualMessage = author;
             messageElement.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
             
             if (isUser) {
@@ -696,7 +691,6 @@ if (!statusText || !image) return;
         responseBox.scrollTop = responseBox.scrollHeight;
     }
 
-    // 옵션 버튼을 화면에 표시하는 함수
     function displayOptions(options) {
         const responseBox = document.getElementById('responseBox');
         if (!responseBox) return;
@@ -716,28 +710,20 @@ if (!statusText || !image) return;
         responseBox.scrollTop = responseBox.scrollHeight;
     }
 
-
-// 옵션 버튼 클릭 처리 함수 (수정된 버전)
 function handleOptionClick(action, buttonText) {
-    // 🔥 상자 관련 액션 처리 추가
     if (action === 'openBox' || action === 'dontOpenBox') {
-        // 사용자가 선택한 버튼 텍스트를 화면에 표시
         displayMessage(buttonText, true);
         
-        // 기존 옵션 버튼들 제거
         const optionContainers = document.querySelectorAll('.message-options');
         optionContainers.forEach(container => container.remove());
         
-        // 서버에 액션 전송
         sendMessage(action);
         return;
     }
 
-    // 버튼 입력 모드의 도형 버튼들 처리
     if (action.startsWith('button_') && ['button_별', 'button_네모', 'button_동그라미', 'button_세모'].includes(action)) {
         buttonInputMode = true;
         
-        // 기호 매핑
         const symbolMap = {
             'button_별': '★',
             'button_네모': '■', 
@@ -749,76 +735,58 @@ function handleOptionClick(action, buttonText) {
         if (symbol) {
             buttonSequence.push(symbol);
             
-            // 텍스트 입력창에 누적된 기호들 표시 (공백 없이)
             const promptInput = document.getElementById("promptInput");
             if (promptInput) {
                 promptInput.value = buttonSequence.join('');
             }
         }
         
-        // 🔥 중요: 서버에도 전송하여 currentSequence 업데이트
         sendButtonToServer(action);
         return;
     }
     
-    // 입력 완료 처리
     if (action === 'button_submit') {
-        const finalSequence = buttonSequence.join(' '); // 채팅창에는 공백으로 구분해서 표시
+        const finalSequence = buttonSequence.join(' ');
         
-        // 채팅창에 최종 결과 표시
         displayMessage(finalSequence, true);
         
-        // 텍스트 입력창 비우기
         const promptInput = document.getElementById("promptInput");
         if (promptInput) {
             promptInput.value = '';
         }
         
-        // 상태 초기화
         buttonInputMode = false;
         buttonSequence = [];
         
-        // 기존 옵션 버튼들 제거
         const optionContainers = document.querySelectorAll('.message-options');
         optionContainers.forEach(container => container.remove());
         
-        // 서버에 제출 전송
         sendMessage(action);
         return;
     }
     
-    // 순서 초기화 처리
     if (action === 'button_reset') {
         buttonSequence = [];
         
-        // 텍스트 입력창 비우기
         const promptInput = document.getElementById("promptInput");
         if (promptInput) {
             promptInput.value = '';
         }
         
-        // 🔥 서버에도 초기화 전송
         sendMessage(action);
         return;
     }
     
-    // 일반적인 버튼이 아닌 경우 기존 로직 유지
     if (!action.startsWith('button_')) {
-        // 사용자가 선택한 버튼 텍스트를 화면에 표시
         displayMessage(buttonText, true);
     }
     
-    // 기존 옵션 버튼들 제거
     const optionContainers = document.querySelectorAll('.message-options');
     optionContainers.forEach(container => container.remove());
     
-    // 서버에 액션 전송
     sendMessage(action);
 }
 
-// 🔥 새로 추가할 함수: 버튼을 서버에 전송 (UI 업데이트는 하지 않음)
-
-// 🔥 중복된 sendButtonToServer 함수 제거하고 하나로 통합
 async function sendButtonToServer(action) {
     try {
         const response = await fetch('/chat', {
@@ -835,21 +803,15 @@ async function sendButtonToServer(action) {
         const data = await response.json();
         console.log(`${action} 서버 전송 완료:`, data);
         
-        // 도형 버튼의 경우 UI 업데이트는 하지 않음
-        // 단순히 서버의 currentSequence만 업데이트하는 목적
-        
     } catch (error) {
         console.error('버튼 서버 전송 오류:', error);
     }
 }
 
-// 🔥 forceSuccessOnCorrectSequence 함수 정의 (또는 제거)
 function forceSuccessOnCorrectSequence() {
     console.log('🔥 forceSuccessOnCorrectSequence 함수 호출됨 (현재는 비활성화)');
-    // 이 함수는 서버에서 처리하므로 클라이언트에서는 비활성화
 }
 
-// 타이핑 효과 표시 함수
     function showTypingIndicator() {
         const responseBox = document.getElementById('responseBox');
         if (!responseBox) return;
@@ -862,7 +824,6 @@ function forceSuccessOnCorrectSequence() {
         responseBox.scrollTop = responseBox.scrollHeight;
     }
 
-    // 타이핑 효과 제거 함수
     function hideTypingIndicator() {
         const typingIndicator = document.getElementById('typing-indicator');
         if (typingIndicator) {
@@ -870,7 +831,6 @@ function forceSuccessOnCorrectSequence() {
         }
     }
 
- /// 🔥 sendMessage 함수 수정 (구문 오류 제거)
 async function sendMessage(message) {
     const currentName = getPlayerName();
   
@@ -894,12 +854,10 @@ async function sendMessage(message) {
         
         console.log('📍 data.message 타입:', typeof data.message);
         console.log('📍 data.message 값:', data.message);
-        console.log('📍 data.clear:', data.clear); // 🔥 clear 플래그 확인
+        console.log('📍 data.clear:', data.clear);
         
-        // 🔥 메시지 처리 개선
         if (data.message) {
             if (Array.isArray(data.message)) {
-                // 배열 메시지 처리
                 data.message.forEach(msg => {
                     if (msg && msg.text) {
                         if (msg.type === 'steve') {
@@ -912,27 +870,22 @@ async function sendMessage(message) {
                     }
                 });
             } else if (typeof data.message === 'string' && data.message.trim() !== '') {
-                // 단일 문자열 메시지 처리
                 displayMessage(data.message, false);
             }
         }
         
-        // 이미지 변경
         if (data.image) {
             updateStatusText(data.image);
         }
         
-        // 옵션 버튼 표시
         if (data.options && data.options.length > 0) {
             displayOptions(data.options);
         }
         
-        // 🔥 forceNote 플래그 처리 (쪽지 강제 표시)
         if (data.forceNote) {
             console.log('🔥 쪽지 강제 표시 플래그 감지!');
         }
         
-        // 🔥 클리어 처리 - 챕터 전환
         if (data.clear) {
             console.log('🔥 클리어 플래그 감지! 다음 챕터로 전환합니다.');
             setTimeout(() => {
@@ -940,7 +893,6 @@ async function sendMessage(message) {
             }, 2000);
         }
         
-        // 🔥 메시지 내용으로 챕터 전환 감지 (추가 안전장치)
         if (typeof data.message === 'string') {
             if (data.message.includes('책장이... 문이였네요') || 
                 data.message.includes('드디어 탈출할 수 있을 것 같아요') ||
@@ -989,7 +941,6 @@ async function sendMessage(message) {
     }
 }
 
-    // 🔥 메인 응답 생성 함수
     async function generateResponse() {
         const promptInput = document.getElementById("promptInput");
         if (!promptInput) return;
@@ -997,7 +948,7 @@ async function sendMessage(message) {
         const message = promptInput.value.trim();
         if (!message) return;
 
-        displayMessage(message, true); // 새로운 방식: 사용자 메시지 표시
+        displayMessage(message, true);
         promptInput.value = '';
 
         if (message.toLowerCase() === 'reset') {
@@ -1005,7 +956,6 @@ async function sendMessage(message) {
             return;
         }
 
-        // 기존 로직들 유지
         if (message.includes('0')) {
             displayMessage('스티브', '다음으로 넘어갑니다. 당신은 이미 플레이를 해본적이 있나요?', 'steve');
             await new Promise(r => setTimeout(r, 2000));
@@ -1020,7 +970,6 @@ async function sendMessage(message) {
             return;
         }
 
-        // 열쇠 및 문 관련 처리
         const keyKeywords = ["열쇠", "키", "key"];
         const doorKeywords = ["문 열기", "문을 열다", "문 열어", "문을 열어", "문을 열어라", "열쇠로 문을", "열쇠로 문 열기"];
         
@@ -1032,12 +981,10 @@ async function sendMessage(message) {
         
         if (doorKeywords.some(keyword => message.includes(keyword)) && hasKey) {
             displayMessage('스티브', '열쇠로 문을 열었어요! 우리는 탈출에 성공했습니다!', 'steve');
-            setTimeout(() => showOverlayAndButton(2), 1500); // 🔥 챕터 2로 이동
+            setTimeout(() => showOverlayAndButton(2), 1500);
             return;
         }
 
-
-        // 🔥 서버로 메시지 전송 (챕터 1은 현재 서버 사용)
         try {
             const res = await fetch('/chat', {
                 method: 'POST',
@@ -1053,12 +1000,10 @@ async function sendMessage(message) {
             if (!Array.isArray(data.message)) {
                 displayMessage('스티브', data.message, 'steve');
                 
-                // 게임 오버 처리
                 if (data.message === "대화를 이어갈 수 없다는 게 슬프네요.") {
                     setTimeout(() => showGameOverScreen(), 1000);
                 }
                 
-                // 옵션 버튼 표시
                 if (data.options) {
                     displayOptions(data.options);
                 }
@@ -1067,20 +1012,18 @@ async function sendMessage(message) {
                     const role = msg.type === 'narration' ? 'narration' : 'steve';
                     displayMessage(msg.type === 'narration' ? 'SYSTEM' : '스티브', msg.text, role);
 
-                    // 챕터 전환 트리거들
                     if (msg.type === 'steve' && (
                         msg.text.includes('문이 열렸어요') || 
                         msg.text.includes('문이 열린 것 같아요') ||
                         msg.text.includes('문이 열린')
                     )) {
-                        setTimeout(() => showOverlayAndButton(2), 1000); // 🔥 챕터 2로 이동
+                        setTimeout(() => showOverlayAndButton(2), 1000);
                     }
                     
                     if (msg.type === 'steve' && msg.text.includes('책장이... 문이였네요...! 저기 뭐가 보이는 것 같은데요?')) {
                         setTimeout(() => showOverlayAndButton(3), 1000);
                     }
                     
-                    // 게임 오버 처리
                     if (msg.type === 'steve' && msg.text === "대화를 이어갈 수 없다는 게 슬프네요.") {
                         setTimeout(() => showGameOverScreen(), 1000);
                     }
@@ -1102,7 +1045,6 @@ async function sendMessage(message) {
         }
     }
 
- // 🔥 showOverlayAndButton 함수에 디버깅 추가
 function showOverlayAndButton(chapterNumber) {
     console.log(`🔥 showOverlayAndButton 호출됨: ${chapterNumber}`);
     
@@ -1127,6 +1069,7 @@ function showOverlayAndButton(chapterNumber) {
         console.error('🔥 chapter-transition-overlay 요소를 찾을 수 없습니다!');
     }
 }
+
     function hideOverlayAndTransition() {
         const overlay = document.getElementById("chapter-transition-overlay");
         if (overlay) {
@@ -1168,7 +1111,6 @@ function showOverlayAndButton(chapterNumber) {
             }, 10);
         }
     }
-
 
     function showGameOverScreen() {
         console.log('게임 오버 화면 표시 시도');
@@ -1231,7 +1173,6 @@ function showOverlayAndButton(chapterNumber) {
         console.log('게임 오버 화면 생성 완료');
     }
 
-    // 페이지 로드 시 초기화
     window.onload = async () => {
         const storedName = localStorage.getItem('playerName');
         if (storedName && storedName !== '플레이어') {
@@ -1240,7 +1181,6 @@ function showOverlayAndButton(chapterNumber) {
             showTextForFiveSeconds();
         }
         
-        // 서버에서 플레이어 이름 가져오기
         await fetchPlayerName();
         
         try {
@@ -1258,9 +1198,7 @@ function showOverlayAndButton(chapterNumber) {
         }
     };
 
-    // 이벤트 리스너 등록
     document.addEventListener('DOMContentLoaded', () => {
-        // 페이지 로드 시 플레이어 이름 가져오기
         fetchPlayerName();
         
         const nextChapterBtn = document.getElementById("next-chapter-btn");
@@ -1286,36 +1224,32 @@ function showOverlayAndButton(chapterNumber) {
         }
     });
 
-document.addEventListener('DOMContentLoaded', async function() {
-  // URL 파라미터에서 이름 확인
-  const urlParams = new URLSearchParams(window.location.search);
-  const nameFromUrl = urlParams.get('playerName');
-  
-  if (nameFromUrl && nameFromUrl.trim() !== '' && nameFromUrl !== '플레이어') {
-    const decodedName = decodeURIComponent(nameFromUrl);
-    console.log(`📥 URL에서 이름 로드: ${decodedName}`);
-    
-    // 서버에 이름 동기화
-    try {
-      const response = await fetch('/sync-name', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: decodedName })
-      });
-      
-      if (response.ok) {
-        console.log('✅ 서버 이름 동기화 성공');
-        // 글로벌 변수에도 저장
-        if (typeof setCurrentPlayerName === 'function') {
-          setCurrentPlayerName(decodedName);
+    document.addEventListener('DOMContentLoaded', async function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const nameFromUrl = urlParams.get('playerName');
+        
+        if (nameFromUrl && nameFromUrl.trim() !== '' && nameFromUrl !== '플레이어') {
+            const decodedName = decodeURIComponent(nameFromUrl);
+            console.log(`📥 URL에서 이름 로드: ${decodedName}`);
+            
+            try {
+                const response = await fetch('/sync-name', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: decodedName })
+                });
+                
+                if (response.ok) {
+                    console.log('✅ 서버 이름 동기화 성공');
+                    if (typeof setCurrentPlayerName === 'function') {
+                        setCurrentPlayerName(decodedName);
+                    }
+                }
+            } catch (error) {
+                console.log('❌ 서버 이름 동기화 실패:', error);
+            }
         }
-      }
-    } catch (error) {
-      console.log('❌ 서버 이름 동기화 실패:', error);
-    }
-  }
-});
-
+    });
 
     window.gameUtils = {
         setPlayerName,
