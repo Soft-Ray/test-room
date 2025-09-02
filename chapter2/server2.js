@@ -12,9 +12,10 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// 🔥 CORS 설정 완전 개선 - origin 'null' 문제 해결
+// CORS 설정 - Render 환경에 맞게 수정
 app.use(cors({
   origin: function (origin, callback) {
+    // Render 환경에서는 origin이 없을 수 있으므로 더 유연하게 설정
     const allowedOrigins = [
       'http://localhost:5001',
       'http://localhost:5002', 
@@ -22,15 +23,16 @@ app.use(cors({
       'http://127.0.0.1:5001',
       'http://127.0.0.1:5002',
       'http://127.0.0.1:5003',
-      'http://127.0.0.1:5500', // 🔥 Live Server 포트 추가
-      'http://localhost:5500',  // 🔥 Live Server 포트 추가
-      null // 로컬 파일 접근 허용
+      'http://127.0.0.1:5500',
+      'http://localhost:5500'
     ];
     
-    if (!origin || allowedOrigins.includes(origin)) {
+    // Render 환경에서는 모든 origin 허용
+    if (process.env.NODE_ENV === 'production' || !origin) {
+      callback(null, true);
+    } else if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      console.log(`[CORS] 차단된 origin: ${origin}`);
       callback(null, true); // 개발 환경에서는 모든 origin 허용
     }
   },
@@ -38,22 +40,6 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'X-Requested-With']
 }));
-
-// 🔥 CORS 디버깅 미들웨어
-app.use((req, res, next) => {
-  console.log(`[Server2 CORS] ${req.method} ${req.url} - Origin: ${req.get('Origin') || 'null'}`);
-  
-  // OPTIONS 요청에 대한 추가 헤더 설정
-  if (req.method === 'OPTIONS') {
-    res.header('Access-Control-Allow-Origin', req.get('Origin') || '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cache-Control, X-Requested-With');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    return res.sendStatus(200);
-  }
-  
-  next();
-});
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..')));
@@ -63,10 +49,10 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// 🔥 플레이어 이름을 동적으로 관리
+// 플레이어 이름을 동적으로 관리
 let playerName = "플레이어";
 
-// 🔥 게임 상태 변수들
+// 게임 상태 변수들
 let safeOpened = false;
 let pictureTakenDown = false;
 let pictureMoved = false;
@@ -205,29 +191,15 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'server.html'));
 });
 
-// 🔥 플레이어 이름 관련 엔드포인트들 개선
+// 플레이어 이름 관련 엔드포인트들
 app.get('/get-player-name', (req, res) => {
   console.log(`[Server2] 이름 요청됨 - 현재 저장된 이름: "${playerName}"`);
   res.json({ name: playerName });
 });
 
-// URL 파라미터로 이름 설정하는 별도 엔드포인트
-app.get('/init-name', (req, res) => {
-  const nameFromUrl = req.query.playerName;
-  if (nameFromUrl && nameFromUrl.trim() !== '' && nameFromUrl !== '플레이어') {
-    const newName = decodeURIComponent(nameFromUrl.trim());
-    playerName = newName;
-    console.log(`[Server2] URL 파라미터로 이름 설정됨: "${playerName}"`);
-    res.json({ success: true, name: playerName });
-  } else {
-    res.json({ success: false, name: playerName, message: 'Invalid name from URL' });
-  }
-});
-
-// 🔥 이름 설정 엔드포인트 강화
 app.post('/set-name', (req, res) => {
   const { name } = req.body;
-  console.log(`[Server2] set-name 요청 받음: "${name}" - Origin: ${req.get('Origin') || 'null'}`);
+  console.log(`[Server2] set-name 요청 받음: "${name}"`);
   
   if (name && name.trim() !== '' && name !== '플레이어') {
     const newName = name.trim();
@@ -240,10 +212,9 @@ app.post('/set-name', (req, res) => {
   }
 });
 
-// 🔥 이름 동기화 엔드포인트 강화
 app.post('/sync-name', (req, res) => {
   const { name } = req.body;
-  console.log(`[Server2] sync-name 요청 받음: "${name}" - Origin: ${req.get('Origin') || 'null'}`);
+  console.log(`[Server2] sync-name 요청 받음: "${name}"`);
   
   if (name && name.trim() !== '' && name !== '플레이어') {
     const newName = name.trim();
@@ -256,12 +227,12 @@ app.post('/sync-name', (req, res) => {
   }
 });
 
-// 🔥 서버 상태 확인 엔드포인트 추가
+// 서버 상태 확인 엔드포인트
 app.get('/status', (req, res) => {
-  console.log(`[Server2] status 요청 - Origin: ${req.get('Origin') || 'null'}`);
+  console.log(`[Server2] status 요청`);
   res.json({ 
     server: 'Server2 (Chapter 2)', 
-    port: 5002,
+    port: process.env.PORT || 5002,
     playerName: playerName,
     chatHistoryLength: chatHistory.length,
     corsEnabled: true,
@@ -269,22 +240,12 @@ app.get('/status', (req, res) => {
       safeOpened,
       pictureMoved,
       computerMessageShown,
-      currentSequence: currentSequence.slice() // 현재 버튼 시퀀스 상태
+      currentSequence: currentSequence.slice()
     }
   });
 });
 
-// 🔥 CORS 테스트 엔드포인트
-app.get('/cors-test', (req, res) => {
-  console.log(`[Server2] CORS 테스트 - Origin: ${req.get('Origin') || 'null'}`);
-  res.json({ 
-    message: 'CORS is working!', 
-    origin: req.get('Origin') || 'null',
-    timestamp: new Date().toISOString()
-  });
-});
-
-// 🔥 메인 채팅 엔드포인트 - 수정된 버전
+// 메인 채팅 엔드포인트
 app.post('/chat', async (req, res) => {
   try {
     const userMessage = req.body.message;
@@ -294,10 +255,8 @@ app.post('/chat', async (req, res) => {
     console.log('userMessage:', userMessage);
     console.log('userName (요청에서):', userName);
     console.log('현재 저장된 playerName:', playerName);
-    console.log('게임 상태 - safeOpened:', safeOpened, 'pictureMoved:', pictureMoved);
-    console.log('현재 버튼 시퀀스:', currentSequence);
 
-    // 🔥 이름 처리 로직
+    // 이름 처리 로직
     let effectiveName = playerName;
 
     if (userName && userName.trim() !== '' && userName.trim() !== '플레이어') {
@@ -314,9 +273,8 @@ app.post('/chat', async (req, res) => {
     }
 
     console.log(`[Server2] 최종 사용할 이름: "${effectiveName}"`);
-    console.log('==========================');
 
-    // 🔥 리셋 처리
+    // 리셋 처리
     if (userMessage === 'reset') {
       chatHistory = [];
       safeOpened = false;
@@ -331,7 +289,7 @@ app.post('/chat', async (req, res) => {
       });
     }
 
-    // 🔥 첫 시작 또는 인사
+    // 첫 시작 또는 인사
     if (userMessage.includes('안녕') || userMessage.includes('hello') || 
         userMessage.includes('상황') || userMessage.includes('어디') ||
         chatHistory.length === 0) {
@@ -340,15 +298,13 @@ app.post('/chat', async (req, res) => {
       
       const welcomeMessage = `${effectiveName}님! 다시 만났네요. 아직은 탈출하지 못한 것 같네요... 그래도 전에 방과 똑같은 컴퓨터를 발견했어요. 당신과 이야기를 계속 나눌 수 있어 다행이네요... 도와주실 거죠?`;
       
-      console.log(`[Server2] 환영 메시지 전송: "${welcomeMessage}"`);
-      
       return res.json({
         message: welcomeMessage,
         image: 'images/sad.gif'
       });
     }
 
-    // 🔥 컴퓨터 메시지 (한 번만 표시)
+    // 컴퓨터 메시지 (한 번만 표시)
     if (userMessage.includes('컴퓨터') && !computerMessageShown) {
       computerMessageShown = true;
       
@@ -359,10 +315,10 @@ app.post('/chat', async (req, res) => {
             text: `[메시지가 도착하였습니다.]
 축하합니다. 첫번째 방에서 탈출했군요. 
 누군가의 도움이 있었나요? 
-생각보다는 빠르게 당신이 탈출한 것 같아 놀랍습니다. 
+생각보다는 빠르게 당신이 탈출한 것 같아 놀랐습니다. 
 당신이 또 이 방을 나가면 완전히 탈출한 거라 볼 수 있을까요? 
 빨리 답을 찾기를. 행운을 빕니다.
-ps.긍정으로 대답하는 것는 진실로 이끌어낼지도 몰라요.
+ps.긍정으로 대답하는 것은 진실로 이끌어낼지도 몰라요.
 -관리자-`
           },
           {
@@ -374,7 +330,7 @@ ps.긍정으로 대답하는 것는 진실로 이끌어낼지도 몰라요.
       });
     }
 
-    // 🔥 거부 반응
+    // 거부 반응
     if (userMessage.includes('싫') || userMessage.includes('왜?') || 
         userMessage.includes('ㄴㄴ') || userMessage.includes('no') ||
         userMessage.includes('시발') || userMessage.includes('좆') || 
@@ -386,7 +342,7 @@ ps.긍정으로 대답하는 것는 진실로 이끌어낼지도 몰라요.
       });
     }
 
-    // 🔥 동의 반응
+    // 동의 반응
     if (userMessage.includes('도와') || userMessage.includes('그래') || 
         userMessage.includes('yes') || userMessage.includes('ㅇㅇ') ||
         userMessage.includes('알겠어') || userMessage.includes('ㅇㅋ')) {
@@ -397,7 +353,7 @@ ps.긍정으로 대답하는 것는 진실로 이끌어낼지도 몰라요.
       });
     }
 
-    // 🔥 주변 탐색
+    // 주변 탐색
     if (userMessage.includes('주변') || userMessage.includes('뭐') || 
         userMessage.includes('보여') || userMessage.includes('살펴') ||
         userMessage.includes('둘러')) {
@@ -408,7 +364,7 @@ ps.긍정으로 대답하는 것는 진실로 이끌어낼지도 몰라요.
       });
     }
 
-    // 🔥 액자 관련 처리
+    // 액자 관련 처리
     if (userMessage.includes('액자') || userMessage.includes('그림')) {
       
       if (pictureMoved) {
@@ -418,13 +374,13 @@ ps.긍정으로 대답하는 것는 진실로 이끌어낼지도 몰라요.
         });
       } else {
         return res.json({
-          message: `${effectiveName}님, 액자에는 아름다운 풍경화가 그려져 있어요. 산과 강이 있는 평화로운 그림이네요. 그런데 액자가 조금 기울어져 있는 것 같아요... 내려놔볼까요?`,
+          message: `${effectiveName}님, 액자에는 아름다운 풍경화가 그려져 있어요. 산과 강이 있는 평화로운 그림이네요. 그런데 액자가 조금 기울어져 있는 것 같아요... 내려놓을까요?`,
           image: 'images/sup.gif'
         });
       }
     }
 
-    // 🔥 액자 내리기
+    // 액자 내리기
     if (userMessage.includes('내려') && !pictureMoved) {
       pictureMoved = true;
       wallMessageShown = true;
@@ -455,7 +411,7 @@ ps.긍정으로 대답하는 것는 진실로 이끌어낼지도 몰라요.
       });
     }
 
-    // 🔥 버튼 관련
+    // 버튼 관련
     if (userMessage.includes('버튼') || userMessage.includes('눌') || 
         userMessage.includes('금고') || userMessage.includes('상자')) {
       
@@ -476,7 +432,7 @@ ps.긍정으로 대답하는 것는 진실로 이끌어낼지도 몰라요.
       return res.json({
         message: `${effectiveName}님, 어느 것부터 눌러볼까요? 세모, 네모, 동그라미, 별 모양의 버튼이에요... 현재 입력된 순서: [${currentSequence.join(', ')}]`,
         options: [
-          { text: '★ 별', action: 'button_별' },
+          { text: '☆ 별', action: 'button_별' },
           { text: '■ 네모', action: 'button_네모' },
           { text: '● 동그라미', action: 'button_동그라미' },
           { text: '▲ 세모', action: 'button_세모' },
@@ -486,18 +442,16 @@ ps.긍정으로 대답하는 것는 진실로 이끌어낼지도 몰라요.
       });
     }
 
-    // 🔥 버튼 액션 처리 - 통합된 버전
+    // 버튼 액션 처리
     if (userMessage.startsWith('button_')) {
       const action = userMessage.replace('button_', '');
-      console.log(`[Server2] 버튼 액션 처리: ${action}, 현재 시퀀스: [${currentSequence.join(', ')}]`);
       
       if (action === 'reset') {
         currentSequence = [];
-        console.log(`[Server2] 버튼 시퀀스 초기화됨`);
         return res.json({
           message: `${effectiveName}님, 순서를 초기화했어요. 다시 눌러보세요!`,
           options: [
-            { text: '★ 별', action: 'button_별' },
+            { text: '☆ 별', action: 'button_별' },
             { text: '■ 네모', action: 'button_네모' },
             { text: '● 동그라미', action: 'button_동그라미' },
             { text: '▲ 세모', action: 'button_세모' },
@@ -507,30 +461,26 @@ ps.긍정으로 대답하는 것는 진실로 이끌어낼지도 몰라요.
         });
       }
       
-      // 🔥 버튼 입력 완료 - 쪽지 내용까지 포함
+      // 버튼 입력 완료
       if (action === 'submit') {
         const correctOrder = ['별', '네모', '동그라미', '세모'];
         const isCorrect = currentSequence.length === 4 && 
                         currentSequence.every((shape, index) => shape === correctOrder[index]);
         
-        console.log(`[Server2] 버튼 시퀀스 검증: 입력된 순서 [${currentSequence.join(', ')}], 정답 [${correctOrder.join(', ')}], 정답 여부: ${isCorrect}`);
-        
         if (isCorrect) {
           safeOpened = true;
           currentSequence = [];
-          console.log(`[Server2] 금고 열림! safeOpened = true`);
-          console.log(`[Server2] 강제로 쪽지 내용 표시!`);
           
           return res.json({
             message: `${effectiveName}님, 맞았어요! 금고가 열렸습니다! 
 
-🔓 금고가 열리며 안에서 쪽지를 발견했습니다! 🔓
+📔 금고가 열리며 안에서 쪽지를 발견했습니다! 📔
 
 📜 쪽지 내용:
-[수많은 글 뒤에 나가는 빛이 보이다]
+[수많은 글 뒤에 나가는 빛이 보인다]
 
 모든 색은 빛으로부터 태어난다.
-붉은 책은 왼쪽에서 노런 빛을 비추고 있고, 아래로 파란책을 비춘다.
+붉은 책은 왼쪽에서 노란 빛을 비추고 있고, 아래로 파란책을 비춘다.
 초록 책은 붉은 빛을 비추지 못하고 있다.
 빛이 모두 모일 때, 진실은 그 중심에서 드러난다.
 책을 올바른 순서로 꽂아라.
@@ -544,16 +494,15 @@ ps.긍정으로 대답하는 것는 진실로 이끌어낼지도 몰라요.
 맨 왼쪽 위부터 책을 꽂기 시작합니다. 
 '빨간색,노란색,흰색,파란색,초록색 책을 꽂는다'라고 말해보세요!`,
             image: 'images/hap.gif',
-            forceNote: true // 쪽지 강제 표시 플래그
+            forceNote: true
           });
         } else {
           currentSequence = [];
-          console.log(`[Server2] 틀린 순서, 시퀀스 초기화됨`);
           return res.json({
             message: `${effectiveName}님, 이 순서는 아닌 것 같네요. 다시 해볼까요?`,
             image: 'images/sad.gif',
             options: [
-              { text: '★ 별', action: 'button_별' },
+              { text: '☆ 별', action: 'button_별' },
               { text: '■ 네모', action: 'button_네모' },
               { text: '● 동그라미', action: 'button_동그라미' },
               { text: '▲ 세모', action: 'button_세모' },
@@ -568,11 +517,10 @@ ps.긍정으로 대답하는 것는 진실로 이끌어낼지도 몰라요.
       if (['별', '네모', '동그라미', '세모'].includes(action)) {
         if (currentSequence.length < 4) {
           currentSequence.push(action);
-          console.log(`[Server2] 버튼 추가됨: ${action}, 현재 시퀀스: [${currentSequence.join(', ')}]`);
           return res.json({
             message: `${effectiveName}님, ${action} 버튼을 눌렀어요. 현재 순서: [${currentSequence.join(', ')}]`,
             options: [
-              { text: '★ 별', action: 'button_별' },
+              { text: '☆ 별', action: 'button_별' },
               { text: '■ 네모', action: 'button_네모' },
               { text: '● 동그라미', action: 'button_동그라미' },
               { text: '▲ 세모', action: 'button_세모' },
@@ -588,7 +536,7 @@ ps.긍정으로 대답하는 것는 진실로 이끌어낼지도 몰라요.
       }
     }
 
-    // 🔥 쪽지 읽기 - 개별 요청 처리
+    // 쪽지 읽기
     if (userMessage.includes('쪽지') || userMessage.includes('읽') || 
         userMessage.includes('열어') || userMessage.includes('보자') || 
         userMessage.includes('안에') || userMessage.includes('내용') ||
@@ -596,14 +544,13 @@ ps.긍정으로 대답하는 것는 진실로 이끌어낼지도 몰라요.
         userMessage.includes('종이') || userMessage.includes('편지') ||
         (safeOpened && (userMessage.includes('금고') || userMessage.includes('상자')))) {
 
-      console.log(`[Server2] 쪽지 내용 표시`);
       return res.json({
         message: [
           {
             type: 'narration',
-            text: `[수많은 글 뒤에 나가는 빛이 보이다]
+            text: `[수많은 글 뒤에 나가는 빛이 보인다]
 모든 색은 빛으로부터 태어난다.
-붉은 책은 왼쪽에서 노런 빛을 비추고 있고, 아래로 파란책을 비춘다.
+붉은 책은 왼쪽에서 노란 빛을 비추고 있고, 아래로 파란책을 비춘다.
 초록 책은 붉은 빛을 비추지 못하고 있다.
 빛이 모두 모일 때, 진실은 그 중심에서 드러난다.
 책을 올바른 순서로 꽂아라.
@@ -622,7 +569,7 @@ ps.긍정으로 대답하는 것는 진실로 이끌어낼지도 몰라요.
       });
     }
 
-    // 🔥 책장 관련 키워드
+    // 책장 관련 키워드
     if (userMessage.includes('책장') || userMessage.includes('책들') || 
         userMessage.includes('도서') || userMessage.includes('서적')) {
       
@@ -639,46 +586,37 @@ ps.긍정으로 대답하는 것는 진실로 이끌어낼지도 몰라요.
       }
     }
 
-    // 🔥 책 꽂기
+    // 책 꽂기
     if (userMessage.includes('책') && (userMessage.includes('꽂') || userMessage.includes('넣') || userMessage.includes('순서'))) {
-      console.log(`[Server2] 책 꽂기 시도: "${userMessage}"`);
-      
       const pattern = /(흰|노란|초록|빨간|파란)/g;
       const match = userMessage.match(pattern);
-      
-      console.log(`[Server2] 색깔 매칭 결과:`, match);
 
       if (match && match.length === 5) {
         const userOrder = match;
         const correctOrder = ['빨간', '노란', '흰', '파란', '초록'];
-        
-        console.log(`[Server2] 사용자 순서: [${userOrder.join(', ')}], 정답: [${correctOrder.join(', ')}]`);
 
         if (JSON.stringify(userOrder) === JSON.stringify(correctOrder)) {
-          console.log(`[Server2] 책 순서 정답! 게임 클리어`);
           return res.json({
             message: [
               {
                 type: 'narration',
-                text: '책장을 올바른 순서로 꽂았습니다. 책장이 "철컥" 소리를 내며 옆으로 미끄러집니다... 밝은 빛이 들어옵니다.'
+                text: '책장을 올바른 순서로 꽂았습니다. 책장이 "철컥" 소리를 내며 옆으로 밀려집니다... 밝은 빛이 들어옵니다.'
               },
               {
                 type: 'steve',
-                text: `${effectiveName}님, 책장이... 문이였네요...! 저기 뭐가 보이는 것 같은데요? 드디어 탈출할 수 있을 것 같아요!`
+                text: `${effectiveName}님, 책장이... 문이었네요...! 저기 뭔가 보이는 것 같은데요? 드디어 탈출할 수 있을 것 같아요!`
               }
             ],
             image: 'images/hap.gif',
             clear: true
           });
         } else {
-          console.log(`[Server2] 책 순서 틀림`);
           return res.json({
             message: `${effectiveName}님, 음... 순서가 틀린 것 같아요. 다시 꽂아볼까요? 입력하신 순서: [${userOrder.join(', ')}]`,
             image: 'images/sad.gif'
           });
         }
       } else {
-        console.log(`[Server2] 색깔 개수 부족: ${match ? match.length : 0}개`);
         return res.json({
           message: `${effectiveName}님, 5가지 색깔을 모두 말씀해주세요. 예: '빨간색,노란색,흰색,파란색,초록색 책을 꽂는다'`,
           image: 'images/sup.gif'
@@ -686,7 +624,7 @@ ps.긍정으로 대답하는 것는 진실로 이끌어낼지도 몰라요.
       }
     }
 
-    // 🔥 힌트 요청
+    // 힌트 요청
     if (userMessage.includes('힌트') || userMessage.includes('도움') || 
         userMessage.includes('모르겠') || userMessage.includes('어려')) {
       
@@ -706,12 +644,10 @@ ps.긍정으로 대답하는 것는 진실로 이끌어낼지도 몰라요.
           image: 'images/sup.gif'
         });
       }
-    }
+   
 
-    // 🔥 기본 OpenAI 응답
+    // 기본 OpenAI 응답
     try {
-      console.log(`[Server2] OpenAI API 호출 준비 - 사용할 이름: "${effectiveName}"`);
-      
       const currentSystemPrompt = createSystemPrompt();
       
       const completion = await openai.chat.completions.create({
@@ -724,8 +660,6 @@ ps.긍정으로 대답하는 것는 진실로 이끌어낼지도 몰라요.
       });
 
       const botResponse = completion.choices[0].message.content;
-      
-      console.log(`[Server2] OpenAI 응답: "${botResponse}"`);
       
       chatHistory.push({ role: 'user', content: userMessage });
       chatHistory.push({ role: 'assistant', content: botResponse });
@@ -749,7 +683,7 @@ ps.긍정으로 대답하는 것는 진실로 이끌어낼지도 몰라요.
   }
 });
 
-// 🔥 에러 핸들링 미들웨어
+// 에러 핸들링 미들웨어
 app.use((error, req, res, next) => {
   console.error('[Server2] 에러 핸들러:', error);
   res.status(500).json({
@@ -758,16 +692,16 @@ app.use((error, req, res, next) => {
   });
 });
 
-// 🔥 서버 시작
-const PORT = 5002;
+// Render는 PORT 환경 변수를 제공합니다
+const PORT = process.env.PORT || 5002;
 
 export function start() {
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`✅ Chapter 2 서버 실행 중: http://192.168.0.10:${PORT}`);
-  console.log(`🤖 OpenAI API 키 상태: ${process.env.OPENAI_API_KEY ? '설정됨' : '설정 안됨'}`);
-  console.log(`📝 초기 플레이어 이름: "${playerName}"`);
-  console.log(`🌐 CORS 정책: origin null 포함 모든 로컬 도메인 허용`);
-});
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`✅ Chapter 2 서버 실행 중: http://0.0.0.0:${PORT}`);
+    console.log(`🤖 OpenAI API 키 상태: ${process.env.OPENAI_API_KEY ? '설정됨' : '설정 안됨'}`);
+    console.log(`📝 초기 플레이어 이름: "${playerName}"`);
+    console.log(`🌐 CORS 정책: 모든 origin 허용 (Render 환경)`);
+  });
 }
 
 // 직접 실행할 때도 서버 시작
