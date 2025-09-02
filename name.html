@@ -110,9 +110,9 @@
       console.log(`🚀 모든 서버에 이름 전송 시작: "${name}"`);
       
       const servers = [
-        { url: 'http://localhost:4001/set-name', name: 'Server 1 (Chapter 1)' },
-        { url: 'http://localhost:4002/set-name', name: 'Server 2 (Chapter 2)' },
-        { url: 'http://localhost:4003/set-name', name: 'Server 3 (Chapter 3)' }
+        { url: 'http://localhost:5001/set-name', name: 'Server 1 (Chapter 1)' },
+        { url: 'http://localhost:5002/set-name', name: 'Server 2 (Chapter 2)' },
+        { url: 'http://localhost:5003/set-name', name: 'Server 3 (Chapter 3)' }
       ];
 
       const results = [];
@@ -156,9 +156,9 @@
       console.log(`🔄 모든 서버에 이름 동기화: "${name}"`);
       
       const servers = [
-        { url: 'http://localhost:4001/sync-name', name: 'Server 1' },
-        { url: 'http://localhost:4002/sync-name', name: 'Server 2' },
-        { url: 'http://localhost:4003/sync-name', name: 'Server 3' }
+        { url: 'http://localhost:5001/sync-name', name: 'Server 1' },
+        { url: 'http://localhost:5002/sync-name', name: 'Server 2' },
+        { url: 'http://localhost:5003/sync-name', name: 'Server 3' }
       ];
 
       const syncPromises = servers.map(server => 
@@ -218,7 +218,7 @@
           // 🔥 이름을 URL 파라미터로 전달하여 메인 게임으로 이동
           setTimeout(() => {
             console.log(`🎮 메인 게임으로 이동 - 이름: "${name}"`);
-            window.location.href = `http://localhost:4001?playerName=${encodeURIComponent(name)}`;
+            window.location.href = `http://localhost:5001?playerName=${encodeURIComponent(name)}`;
           }, 1500);
           
         } else {
@@ -228,7 +228,7 @@
           
           setTimeout(() => {
             console.log(`🎮 메인 게임으로 이동 (서버 실패) - 이름: "${name}"`);
-            window.location.href = `http://localhost:4001?playerName=${encodeURIComponent(name)}`;
+            window.location.href = `http://localhost:5001?playerName=${encodeURIComponent(name)}`;
           }, 2000);
         }
         
@@ -239,7 +239,7 @@
         
         setTimeout(() => {
           console.log(`🎮 메인 게임으로 이동 (오류 발생) - 이름: "${nameInput.value.trim()}"`);
-          window.location.href = `http://localhost:4001?playerName=${encodeURIComponent(nameInput.value.trim())}`;
+          window.location.href = `http://localhost:5001?playerName=${encodeURIComponent(nameInput.value.trim())}`;
         }, 2000);
       } finally {
         // UI 상태 복구는 페이지 이동 전까지만
@@ -247,7 +247,7 @@
           nameSubmitBtn.disabled = false;
           nameSubmitBtn.textContent = '확인';
           loading.style.display = 'none';
-        }, 4001);
+        }, 5001);
       }
     });
         
@@ -289,9 +289,9 @@
       console.log('🔍 모든 서버 상태 확인 시작');
       
       const servers = [
-        'http://localhost:4001/status',
-        'http://localhost:4002/status', 
-        'http://localhost:4003/status'
+        'http://localhost:5001/status',
+        'http://localhost:5002/status', 
+        'http://localhost:5003/status'
       ];
       
       for (const url of servers) {
