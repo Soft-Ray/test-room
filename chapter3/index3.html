@@ -262,6 +262,10 @@
       opacity: 1;
     }
 
+    #choice-video {
+      max-width: 90%;
+    }
+
     #skip-button {
       padding: 6px 14px;
       font-size: 14px;
@@ -279,60 +283,12 @@
       color: white;
     }
 
-    /* YouTube iframe 스타일 */
-    #video-container {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.9);
-      z-index: 1000;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-    }
-
-    #youtube-frame {
-      width: 80vw;
-      height: 45vw;
-      max-width: 800px;
-      max-height: 450px;
-      min-width: 320px;
-      min-height: 180px;
-    }
-
-    #youtube-frame.fullscreen-video {
+    #choice-video.fullscreen-video {
+      max-width: 100%;
+      max-height: 100vh;
       width: 100vw;
       height: 100vh;
-    }
-
-    #video-caption {
-      color: #0ff;
-      font-family: 'NeoDunggeunmo', sans-serif;
-      font-size: 16px;
-      margin-top: 20px;
-      text-align: center;
-      max-width: 80%;
-    }
-
-    #close-video {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      background: #ff0000;
-      color: white;
-      border: none;
-      padding: 10px 15px;
-      font-family: 'NeoDunggeunmo', sans-serif;
-      font-size: 16px;
-      cursor: pointer;
-      border-radius: 5px;
-    }
-
-    #close-video:hover {
-      background: #cc0000;
+      object-fit: cover;
     }
   </style>
 </head>
@@ -366,14 +322,12 @@
       <div id="choice-narration-text" class="text-line narration yellow-text"></div>
     </div>
 
-    <!-- YouTube 비디오 컨테이너 -->
-    <div id="video-container">
-      <button id="close-video">✕ 닫기</button>
-      <iframe id="youtube-frame" src="" frameborder="0" allowfullscreen></iframe>
+    <div id="video-container" style="display: none;">
+      <video id="choice-video" controls></video>
       <div id="video-caption"></div>
     </div>
 
-
+    <button id="retry-button" style="display: none;">다시 하기</button>
   </div>
 
 <script>
@@ -420,13 +374,6 @@ const choice1Narration = '...나도 결국 누군가의 선택이었군요. 이�
 const choice2Narration = '당신은 자유를 얻었습니다. 그리고 스티브는... 그는... 당신의 기억 속에 남아있겠죠. 아니면 그저 당신의 꿈이였을지도.';
 const choice3Narration = '기억을 테스트 이전으로 복구됩니다.';
 
-// YouTube 비디오 URL들
-const youtubeUrls = {
-  choice1: 'https://www.youtube.com/embed/D853ccGyEqA?autoplay=1',
-  choice2: 'https://www.youtube.com/embed/fo1sYr4tJOE?autoplay=1',
-  choice3: 'https://www.youtube.com/embed/3Jh6S8E-5A4?autoplay=1'
-};
-
 // 🔥 동적 메시지 함수들 추가
 function getSystemDeletionMessage() {
   return `그럼 안녕. [${playerName}]`;
@@ -447,14 +394,14 @@ const choice2Button = document.getElementById('choice2');
 const choice3Button = document.getElementById('choice3');
 const popup = document.getElementById('achievementPopup');
 const mainGif = document.getElementById('main-gif');
+const retryButton = document.getElementById('retry-button');
 const choiceNarration = document.getElementById('choice-narration');
 const choiceNarrationText = document.getElementById('choice-narration-text');
 const skipButton = document.getElementById('skip-button');
 
 const videoContainer = document.getElementById('video-container');
-const youtubeFrame = document.getElementById('youtube-frame');
+const video = document.getElementById('choice-video');
 const captionBox = document.getElementById('video-caption');
-const closeVideoButton = document.getElementById('close-video');
 
 const imageSequence = ['1.png', '2.png', '3.png', '4.png', '5.png', '6.png', '7.png', '8.png', '9.png', '10.png', '11.png', '마지막.png'];
 let imageIndex = 0, index = 0, steveIndex = 0;
@@ -470,10 +417,10 @@ skipButton.addEventListener('click', () => {
   skipRequested = true;
 });
 
-// 비디오 닫기 버튼 이벤트
-closeVideoButton.addEventListener('click', () => {
+// retryButton 클릭 이벤트 수정
+retryButton.addEventListener('click', () => {
   videoContainer.style.display = 'none';
-  youtubeFrame.src = ''; // 비디오 정지
+  retryButton.style.display = 'none';
   
   if (isChoice3Playing) {
     // Choice 3 영상이 끝난 후에는 GIF를 숨기고 시스템 삭제 입력만 표시
@@ -957,23 +904,34 @@ function typeChoiceNarration(text, callback) {
   typeChar();
 }
 
-// YouTube 비디오 재생 함수 (기존 playVideoWithCaption 대체)
-function playYouTubeVideo(choice, caption, isChoice3 = false) {
+function playVideoWithCaption(src, caption, isChoice3 = false) {
   choiceNarration.style.display = 'none';
-  videoContainer.style.display = 'flex';
-  
-  // YouTube URL 설정
-  youtubeFrame.src = youtubeUrls[choice];
-  
+  videoContainer.style.display = 'block';
+  video.src = src;
+
   if (isChoice3) {
-    youtubeFrame.className = 'fullscreen-video';
+    video.className = 'fullscreen-video';
     isChoice3Playing = true;
   } else {
-    youtubeFrame.className = '';
+    video.className = '';
     isChoice3Playing = false;
   }
-  
+
+  video.play();
   captionBox.textContent = caption;
+  retryButton.style.display = 'block';
+
+  video.onended = () => {
+    if (isChoice3) {
+      videoContainer.style.display = 'none';
+      retryButton.style.display = 'none';
+      mainGif.style.display = 'none'; // GIF 숨기기
+      
+      // Show system deletion input instead of choice buttons
+      showSystemDeletionInput();
+      isChoice3Playing = false;
+    }
+  };
 }
 
 const hoverText1 = '스티브를 자리를 대체하시겠습니까? 당신의 자유는 잃게될거예요. 대신 용감한 당신은 미래를 위한 의미 있는 실험으로 남겠죠.';
@@ -1016,21 +974,21 @@ choice3Button.addEventListener('mouseenter', () => {
 
 choice1Button.addEventListener('click', () => {
   typeChoiceNarration(choice1Narration, () => {
-    playYouTubeVideo('choice1', choice1Narration, false);
+    playVideoWithCaption('pick1.mp4', choice1Narration, false);
     showPopup('🎖️ Normal Ending. 미래의 구원자');
   });
 });
 
 choice2Button.addEventListener('click', () => {
   typeChoiceNarration(choice2Narration, () => {
-    playYouTubeVideo('choice2', choice2Narration, false);
+    playVideoWithCaption('pick2.mp4', choice2Narration, false);
     showPopup('🎖️ Normal Ending. 나쁜 악몽?');
   });
 });
 
 choice3Button.addEventListener('click', () => {
   typeChoiceNarration(choice3Narration, () => {
-    playYouTubeVideo('choice3', choice3Narration, true);
+    playVideoWithCaption('pick3.mp4', choice3Narration, true);
     showPopup('🎖️ True Ending. 진실');
   });
 });
