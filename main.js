@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -11,7 +14,7 @@ import { start as startChapter2 } from './chapter2/server2.js';
 import { start as startChapter3 } from './chapter3/server3.js';
 
 const app = express();
-const PORT = process.env.PORT || 10000;
+const PORT = process.env.PORT || 5000;
 
 // 각 서버의 start 함수를 비동기적으로 실행
 const startServers = async () => {
@@ -28,9 +31,8 @@ const startServers = async () => {
   }
 };
 
-// 기본 페이지 (index0.html)
 app.get('/', (req, res) => {
-  res.sendFile(path.resolve(__dirname, 'index0.html'));
+  res.sendFile(path.resolve(__dirname, 'server.html'));
 });
 
 // 앱 초기화 및 서버 시작
