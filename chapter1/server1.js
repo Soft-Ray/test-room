@@ -12,14 +12,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// 🔥 CORS: 외부 접속 허용
-app.use(cors({
-  origin: '*', // 배포용: 모든 도메인 허용
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
-
+app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '/')));
 
@@ -27,8 +20,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// 전역 상태
-let playerName = "플레이어";
+let playerName = "플레이어"; // 기본값
 let chatHistory = [];
 let boxOpened = false;
 let boxDeclined = false;
@@ -36,19 +28,20 @@ let keyFound = false;
 let secondRoomEntered = false;
 let helpResponded = false;
 
-// 🔥 플레이어 이름 엔드포인트
+// 🔥 플레이어 이름 관련 엔드포인트들 추가
 app.get('/get-player-name', (req, res) => {
-  console.log(`[Server1] 이름 요청됨: ${playerName}`);
+  console.log(`[Server1] 이름 요청됨 - 현재 저장된 이름: "${playerName}"`);
   res.json({ name: playerName });
 });
 
 app.post('/set-name', (req, res) => {
   const { name } = req.body;
-  console.log(`[Server1] set-name 요청: "${name}"`);
-
+  console.log(`[Server1] set-name 요청 받음: "${name}"`);
+  
   if (name && name.trim() !== '' && name !== '플레이어') {
-    playerName = name.trim();
-    console.log(`[Server1] ✅ 이름 설정 완료: "${playerName}"`);
+    const newName = name.trim();
+    playerName = newName;
+    console.log(`[Server1] ✅ 플레이어 이름 설정 완료: "${playerName}"`);
     res.json({ success: true, message: '이름이 설정되었습니다.', name: playerName });
   } else {
     console.log(`[Server1] ❌ 유효하지 않은 이름: "${name}"`);
@@ -56,12 +49,14 @@ app.post('/set-name', (req, res) => {
   }
 });
 
-// 🔥 서버 간 이름 동기화
-app.post('/sync-name', async (req, res) => {
+app.post('/sync-name', (req, res) => {
   const { name } = req.body;
+  console.log(`[Server1] sync-name 요청 받음: "${name}"`);
+  
   if (name && name.trim() !== '' && name !== '플레이어') {
-    playerName = name.trim();
-    console.log(`[Server1] ✅ 이름 동기화 완료: "${playerName}"`);
+    const newName = name.trim();
+    playerName = newName;
+    console.log(`[Server1] ✅ 플레이어 이름 동기화 완료: "${playerName}"`);
     res.json({ success: true, name: playerName, message: 'Name synced successfully' });
   } else {
     console.log(`[Server1] ❌ 동기화 실패 - 유효하지 않은 이름: "${name}"`);
@@ -69,54 +64,60 @@ app.post('/sync-name', async (req, res) => {
   }
 });
 
-// 🔥 서버 간 이름 가져오기
+// 🔥 다른 서버에서 이름을 가져오는 함수
 async function fetchPlayerNameFromOtherServers() {
-  const serverUrls = [
-    'https://server2-yourproject.onrender.com/get-player-name',
-    'https://server3-yourproject.onrender.com/get-player-name'
-  ];
-
-  for (const url of serverUrls) {
-    try {
-      const response = await fetch(url);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.name && data.name !== '플레이어') {
-          playerName = data.name;
-          console.log(`[Server1] ${url}에서 이름 가져옴: ${playerName}`);
-          return true;
-        }
-      }
-    } catch (error) {
-      console.log(`[Server1] ${url}에서 이름 가져오기 실패:`, error.message);
+  try {
+    const response = await fetch('http://localhost:5002/');
+    const data = await response.json();
+    if (data.name && data.name !== '플레이어') {
+      playerName = data.name;
+      console.log(`[Server1] Server2에서 이름 가져옴: ${playerName}`);
+      return true;
     }
+  } catch (error) {
+    console.log('[Server1] Server2에서 이름 가져오기 실패:', error.message);
   }
+  
+  try {
+    const response = await fetch('http://localhost:5003/');
+    const data = await response.json();
+    if (data.name && data.name !== '플레이어') {
+      playerName = data.name;
+      console.log(`[Server1] Server3에서 이름 가져옴: ${playerName}`);
+      return true;
+    }
+  } catch (error) {
+    console.log('[Server1] Server3에서 이름 가져오기 실패:', error.message);
+  }
+  
+app.use(cors({
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      'http://localhost:5001',
+      'http://localhost:5002', 
+      'http://localhost:5003',
+      'http://127.0.0.1:5001',
+      'http://127.0.0.1:5002',
+      'http://127.0.0.1:5003',
+      'http://127.0.0.1:5500', // 🔥 Live Server 포트 추가
+      'http://localhost:5500',  // 🔥 Live Server 포트 추가
+      null // 로컬 파일 접근 허용
+    ];
+    
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log(`[CORS] 차단된 origin: ${origin}`);
+      callback(null, true); // 개발 환경에서는 모든 origin 허용
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'X-Requested-With']
+}));
+
   return false;
 }
-
-// 🔥 챗 메시지 처리
-app.post('/chat', async (req, res) => {
-  const userMessage = req.body.message || '';
-
-  chatHistory.push({ role: 'user', content: userMessage });
-
-  try {
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: `당신은 스티브입니다. 플레이어 이름은 ${playerName}입니다.` },
-        ...chatHistory.slice(-10),
-      ],
-    });
-
-    const botResponse = completion.choices[0].message.content;
-    chatHistory.push({ role: 'assistant', content: botResponse });
-    res.json({ message: botResponse });
-  } catch (error) {
-    console.error('OpenAI API 호출 오류:', error);
-    res.status(500).json({ message: '서버 오류가 발생했습니다.' });
-  }
-});
 
 function createContext() {
   return `
@@ -632,17 +633,18 @@ app.get('/get-player-name', (req, res) => {
   res.json({ name: playerName });
 });
 
-// 🔥 Render 배포용 포트
-const PORT = process.env.PORT || 5001;
+const PORT = 5001;
 
-app.listen(PORT, async () => {
-  console.log(`✅ Server1 실행 중: http://localhost:${PORT}`);
-  console.log('🤖 OpenAI API 상태:', process.env.OPENAI_API_KEY ? '설정됨' : '설정 안됨');
-
-  // 서버 시작 시 다른 서버에서 이름 가져오기 시도
-  await fetchPlayerNameFromOtherServers();
-});
+const start = () => {
+  app.listen(PORT, '0.0.0.0', async () => {  // ← 모든 네트워크 인터페이스 허용
+    console.log(`✅ Chapter 2 서버 실행 중: http://192.168.0.10:${PORT}`);
+    
+    // 🔥 서버 시작시 server3에서 이름 가져오기 시도
+    await fetchPlayerNameFromServer3();
+  });
+};
 
 
 
 export { start };
+
