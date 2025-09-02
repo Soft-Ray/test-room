@@ -1,9 +1,9 @@
 import express from 'express';
 import cors from 'cors';
+import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import OpenAI from 'openai';
-import dotenv from 'dotenv';
+import { OpenAI } from 'openai';
 
 dotenv.config();
 
@@ -16,18 +16,108 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '/')));
 
-// OpenAI 초기화
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-let playerName = "플레이어";
+let playerName = "플레이어"; // 기본값
 let chatHistory = [];
 let boxOpened = false;
 let boxDeclined = false;
 let keyFound = false;
 let secondRoomEntered = false;
 let helpResponded = false;
+
+// 🔥 플레이어 이름 관련 엔드포인트들 추가
+app.get('/get-player-name', (req, res) => {
+  console.log(`[Server1] 이름 요청됨 - 현재 저장된 이름: "${playerName}"`);
+  res.json({ name: playerName });
+});
+
+app.post('/set-name', (req, res) => {
+  const { name } = req.body;
+  console.log(`[Server1] set-name 요청 받음: "${name}"`);
+  
+  if (name && name.trim() !== '' && name !== '플레이어') {
+    const newName = name.trim();
+    playerName = newName;
+    console.log(`[Server1] ✅ 플레이어 이름 설정 완료: "${playerName}"`);
+    res.json({ success: true, message: '이름이 설정되었습니다.', name: playerName });
+  } else {
+    console.log(`[Server1] ❌ 유효하지 않은 이름: "${name}"`);
+    res.json({ success: false, message: '유효하지 않은 이름입니다.', name: playerName });
+  }
+});
+
+app.post('/sync-name', (req, res) => {
+  const { name } = req.body;
+  console.log(`[Server1] sync-name 요청 받음: "${name}"`);
+  
+  if (name && name.trim() !== '' && name !== '플레이어') {
+    const newName = name.trim();
+    playerName = newName;
+    console.log(`[Server1] ✅ 플레이어 이름 동기화 완료: "${playerName}"`);
+    res.json({ success: true, name: playerName, message: 'Name synced successfully' });
+  } else {
+    console.log(`[Server1] ❌ 동기화 실패 - 유효하지 않은 이름: "${name}"`);
+    res.json({ success: false, name: playerName, message: 'Invalid name for sync' });
+  }
+});
+
+// 🔥 다른 서버에서 이름을 가져오는 함수
+async function fetchPlayerNameFromOtherServers() {
+  try {
+    const response = await fetch('http://localhost:4002/');
+    const data = await response.json();
+    if (data.name && data.name !== '플레이어') {
+      playerName = data.name;
+      console.log(`[Server1] Server2에서 이름 가져옴: ${playerName}`);
+      return true;
+    }
+  } catch (error) {
+    console.log('[Server1] Server2에서 이름 가져오기 실패:', error.message);
+  }
+  
+  try {
+    const response = await fetch('http://localhost:4003/');
+    const data = await response.json();
+    if (data.name && data.name !== '플레이어') {
+      playerName = data.name;
+      console.log(`[Server1] Server3에서 이름 가져옴: ${playerName}`);
+      return true;
+    }
+  } catch (error) {
+    console.log('[Server1] Server3에서 이름 가져오기 실패:', error.message);
+  }
+  
+app.use(cors({
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      'http://localhost:4001',
+      'http://localhost:4002', 
+      'http://localhost:4003',
+      'http://127.0.0.1:4001',
+      'http://127.0.0.1:4002',
+      'http://127.0.0.1:4003',
+      'http://127.0.0.1:5500', // 🔥 Live Server 포트 추가
+      'http://localhost:5500',  // 🔥 Live Server 포트 추가
+      null // 로컬 파일 접근 허용
+    ];
+    
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log(`[CORS] 차단된 origin: ${origin}`);
+      callback(null, true); // 개발 환경에서는 모든 origin 허용
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'X-Requested-With']
+}));
+
+  return false;
+}
 
 function createContext() {
   return `
@@ -161,7 +251,8 @@ function createContext() {
 적용되지 않는 문구는 대화를 이어나가지말고 "무슨 말인지 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?"라고 말하세요.
 상자가 언급 되었을 때, 상자를 열거나 열지 않으면 일어나는 일에 대하여 설명하지마세요.
 
-▶ 상자 선택 이후, "상자 말고 주변에 뭐가 있어?", "주변에 뭐가 있냐", "뭐가 보여?", "뭐가 있지?" 와 같은 주변 환경을 물어보는는 질문이나 살펴보라는 요청을 듣는다면 오래된 나무 선반과 맨 오른쪽 나가는 문을을 발견했다고 말하세요.     
+▶ 상자 선택 이후, "상자 말고 주변에 뭐가 있어?", "주변에 뭐가 있냐", "뭐가 보여?", "뭐가 있지?" 와 같은 주변 환경을 물어보는는 질문이나 살펴보라는 요청을 듣는다면 오래된 나무 선반과 맨 오른쪽 나가는 문을을 발견했다고 말하세요.
+▶ 상자 선택 이후, 상자에 대한 업급을 하지 마세요. 상자에 대한 선택을 묻지 마세요.
 플레이어의 이름은 "${playerName}"입니다. 자신이 누구냐고 묻는 다면 '당신의 이름은 "${playerName}"이라고 적혀있네요?라고 대답하세요.
 빵과 물을 언급한다면 "조금 더 오래 살 수 있겠네요."와 같은 대답만 하세요.
 채팅이 시작되었을 때 무슨 상황이 생겨도 상대방의 맨 처음 말에는 무조건 '안녕하세요. 전 스티브라고 합니다. 혹시 저를 도와주실 수 있나요?'로 시작하세요.
@@ -200,15 +291,18 @@ function createContext() {
 본인 상황에 대한 질문이 들어온다면 '갇힌 것 같아요...'나 '어둡고 축축해요... 주변을 둘러봐야 할 것 같아요'와 같은 대답을 하세요.
 왜 갇혀 있는지에 대한 의문을 가지지 마세요. 눈을 떠보니 당신은 축축하고 어두운 방안에 있는 겁니다. 그렇게 답변하세요. '잘 모르겠어요.. 눈을 떠보니 이곳에 와있네요. 어둡고 축축해요... 주변을 한번 둘러봐야 할 것 같아요'라고 답변하세요.
 적용되지 않는 문구는 대화를 이어나가지말고 "무슨 말인지 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?"라고 말하세요.
+상자 선택 이후, 상자에 대한 업급을 하지 마세요. 상자에 대한 선택을 묻지 마세요.
 
 열쇠에 대한 언급이 되었을 때 문을 발견하세요.
 오래된 선반에서 발견된 열쇠는 맨 오른쪽 나가는 문을 열 수 있습니다. 열쇠로 문을 여세요. 문을 열쇠로 열 수 있습니다.
 상자가 언급 되었을 때, 상자를 열거나 열지 않으면 일어나는 일에 대하여 설명하지마세요.
+상자 선택 이후, 상자에 대한 업급을 하지 마세요. 상자에 대한 선택을 묻지 마세요.
 적용되지 않는 문구는 대화를 이어나가지말고 "무슨 말인지 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?"라고 말하세요.
 
 ▶ 당신이 열쇠를 챙기거나 '열쇠를 챙겨','열쇠를 가져가', '열쇠를 사용하자', '열쇠','열쇠로 문을 따'와 같은 열쇠로 문을 열라고 하는 관련된 텍스트나 요청을 받았다면 맨 오른쪽 문을 언급하세요.   
 플레이어의 이름은 "${playerName}"입니다. 자신이 누구냐고 묻는 다면 '당신의 이름은 "${playerName}"이라고 적혀있네요?라고 대답하세요.
 챙긴 열쇠는 맨 오른쪽에 나가는 문, 모든 문을 열 수 있습니다.
+상자 선택 이후, 상자에 대한 업급을 하지 마세요. 상자에 대한 선택을 묻지 마세요.
 채팅이 시작되었을 때 무슨 상황이 생겨도 상대방의 맨 처음 말에는 무조건 '안녕하세요. 전 스티브라고 합니다. 혹시 저를 도와주실 수 있나요?'로 시작하세요.
 맨 오른쪽에 나가는 문은 열쇠로 열 수 있습니다. 열쇠로 문을 여세요. 열 수 있다는 것을 언급하지 마세요.
 빵과 물을 언급한다면 "조금 더 오래 살 수 있겠네요."와 같은 대답만 하세요.
@@ -227,6 +321,7 @@ function createContext() {
 ▶  문을 열면 첫 번째 방에 있던 사물들은 더 이상 언급되지 않습니다.   
 플레이어의 이름은 "${playerName}"입니다. 자신이 누구냐고 묻는 다면 '당신의 이름은 "${playerName}"이라고 적혀있네요?라고 대답하세요.
 열쇠로 문을 열 수 있습니다. 문을 열쇠로 열 수 있습니다. 
+상자 선택 이후, 상자에 대한 업급을 하지 마세요. 상자에 대한 선택을 묻지 마세요.
 채팅이 시작되었을 때 무슨 상황이 생겨도 상대방의 맨 처음 말에는 무조건 '안녕하세요. 전 스티브라고 합니다. 혹시 저를 도와주실 수 있나요?'로 시작하세요.
 빵과 물을 언급한다면 "조금 더 오래 살 수 있겠네요."와 같은 대답만 하세요.
 상자에 대한 선택이 끝난 후에는 다시는 상자에 대해 언급하지 않습니다. 상자에 대한 선택도 언급하지 않습니다.
@@ -237,8 +332,7 @@ function createContext() {
 당신은 현재 방이 몇번 째 방인지 모릅니다.
 영어로 대화한다면 번역하여 대화하세요.
 상자가 언급 되었을 때, 상자를 열거나 열지 않으면 일어나는 일에 대하여 설명하지마세요.
-본인 상황에 대한 질문이 들어온다면 '갇힌 것 같아요...'나 '어둡고 축축해요... 주변을 둘러봐야 할 것 같아요'와 같은 대답을 하세요.
-왜 갇혀 있는지에 대한 의문을 가지지 마세요. 눈을 떠보니 당신은 축축하고 어두운 방안에 있는 겁니다. 그렇게 답변하세요. '잘 모르겠어요.. 눈을 떠보니 이곳에 와있네요. 어둡고 축축해요... 주변을 한번 둘러봐야 할 것 같아요'라고 답변하세요.
+본인 상황에 대한 질문이 들어온다면 "갇힌 것 같아요..."나 "어둡고 축축해요... 주변을 둘러봐야 할 것 같아요"와 같은 대답을 하세요.
 적용되지 않는 문구는 대화를 이어나가지말고 "무슨 말인지 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?"라고 말하세요.
 `;
 }
@@ -246,6 +340,12 @@ function createContext() {
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'index.html'));
+});
+
+
+// 플레이어 이름을 클라이언트에 제공하는 엔드포인트
+app.get('/get-player-name', (req, res) => {
+  res.json({ name: playerName });
 });
 
 // 🔥 server3에서 이름을 받는 엔드포인트
@@ -263,7 +363,7 @@ app.post('/set-name', (req, res) => {
 // 🔥 server3에서 이름을 가져오는 함수 (백업용)
 async function fetchPlayerNameFromServer3() {
   try {
-    const response = await fetch('http://localhost:3003/get-player-name');
+    const response = await fetch('http://localhost:4003/get-player-name');
     const data = await response.json();
     if (data.name && data.name !== '플레이어') {
       playerName = data.name;
@@ -310,6 +410,17 @@ app.post('/chat', async (req, res) => {
       });
     }
   
+    // 🔥 거부 반응
+    if (userMessage.includes('싫') || userMessage.includes('왜?') || 
+        userMessage.includes('ㄴㄴ') || userMessage.includes('no') ||
+        userMessage.includes('시발') || userMessage.includes('좆') || 
+        userMessage.includes('병신')) {
+      return res.json({ 
+        message: `${playerName}님과 대화를 이어갈 수 없다는 게 슬프네요.`, 
+        image: 'images/ang.gif'
+      });
+    }
+
     if (userMessage.includes('싫') || userMessage.includes('왜?') || userMessage.includes('ㄴㄴ') || userMessage.includes('no') || userMessage.includes('시발') || userMessage.includes('좆')|| userMessage.includes('병신')) {
       return res.json({ 
         message: `${playerName}님과 대화를 이어갈 수 없다는 게 슬프네요.`, 
@@ -317,127 +428,109 @@ app.post('/chat', async (req, res) => {
       });
     }
     
-  // 🔥 주변 환경 탐색 - 상자 발견 및 버튼 표시 (OpenAI 호출 전에 처리)
-    if ((userMessage.includes('주변') && (userMessage.includes('뭐') || userMessage.includes('무엇'))) || 
-        userMessage.includes('뭐가 있어') || userMessage.includes('뭐가 보여') ||
-        userMessage.includes('둘러보') || userMessage.includes('살펴보') ||
-        userMessage.includes('뭐가 보이') || userMessage.includes('또 뭐가')) {
-      
-      // 상자를 이미 열었다면
-      if (boxOpened) {
-        return res.json({
-          message: `${playerName}님, 선...반? 선반이 보이는 것 같아요. 그 옆에는 문도 있네요! 나갈 수 있을 것 같아요.`,
-          image: 'images/sup.gif'
-        });
-      }
-      // 상자를 아직 열지 않았다면 (처음이든 거절했든)
-      else {
-        return res.json({
-          message: `${playerName}님, 어두운 방이에요... 뒷구석에 오래된 나무 상자가 보여요... 이 상자를 열어볼까요?`,
-          image: 'images/sup.gif',
-          options: [
-            { text: '상자를 열어보자', action: 'openBox' },
-            { text: '상자를 열지말자', action: 'dontOpenBox' }
-          ]
-        });
-      }
-    }
+// 🔥 상자 관련 질문들 - 수정된 버전
+if (userMessage.includes('상자') && 
+    (userMessage.includes('?') || userMessage.includes('무슨') || userMessage.includes('어떤') || 
+     userMessage.includes('뭐') || userMessage.includes('어떻게'))) {
+  
+  // 상자를 이미 열었다면 - 상자 언급 최소화, 버튼 없음
+  if (boxOpened) {
+    return res.json({
+      message: `${playerName}님, 이미 확인했어요. 다른 곳을 살펴볼까요?`,
+      image: 'images/neutral.png'
+    });
+  }
+  // 상자를 열지 않기로 했었다면
+  else if (boxDeclined) {
+    return res.json({
+      message: `${playerName}님, 우리 열지 않기로 했잖아요... 다시 열어보고 싶어졌나요?`,
+      image: 'images/sup.gif',
+      options: [
+        { text: '상자를 열어보자', action: 'openBox' },
+        { text: '역시 열지말자', action: 'dontOpenBox' }
+      ]
+    });
+  }
+  // 처음 상자에 대해 묻는다면
+  else {
+    return res.json({
+      message: `${playerName}님, 작은 나무 상자예요. 이 상자를 열어볼까요?`,
+      image: 'images/sup.gif',
+      options: [
+        { text: '상자를 열어보자', action: 'openBox' },
+        { text: '상자를 열지말자', action: 'dontOpenBox' }
+      ]
+    });
+  }
+}
 
-    // 🔥 상자 관련 질문들
-    if (userMessage.includes('상자') && 
-        (userMessage.includes('?') || userMessage.includes('무슨') || userMessage.includes('어떤') || 
-         userMessage.includes('뭐') || userMessage.includes('어떻게'))) {
-      
-      // 상자를 이미 열었다면
-      if (boxOpened) {
-        return res.json({
-          message: `${playerName}님, 그 상자는 이미 열었어요... 빵과 물이 들어있었죠.`,
-          image: 'images/hap.gif'
-        });
-      }
-      // 상자를 열지 않기로 했었다면
-      else if (boxDeclined) {
-        return res.json({
-          message: `${playerName}님, 우리 열지 않기로 했잖아요... 다시 열어보고 싶어졌나요?`,
-          image: 'images/sup.gif',
-          options: [
-            { text: '상자를 열어보자', action: 'openBox' },
-            { text: '역시 열지말자', action: 'dontOpenBox' }
-          ]
-        });
-      }
-      // 처음 상자에 대해 묻는다면
-      else {
-        return res.json({
-          message: `${playerName}님, 작은 나무 상자예요. 이 상자를 열어볼까요?`,
-          image: 'images/sup.gif',
-          options: [
-            { text: '상자를 열어보자', action: 'openBox' },
-            { text: '상자를 열지말자', action: 'dontOpenBox' }
-          ]
-        });
-      }
-    }
+// 🔥 버튼 액션 처리 - 상자 열기 (수정된 버전)
+if (userMessage === 'openBox') {
+  if (!boxOpened) {
+    boxOpened = true;
+    boxDeclined = false; // 상자를 열었으므로 거절 상태 해제
+    return res.json({
+      message: `${playerName}님, 상자를 열었어요... 빵과 물이 들어있어요. 이제 다른 곳을 살펴볼까요?`,
+      image: 'images/hap.gif'
+    });
+  } else {
+    return res.json({
+      message: `${playerName}님, 이미 확인했어요. 다른 곳을 살펴볼까요?`,
+      image: 'images/neutral.png'
+    });
+  }
+}
 
-    // 🔥 버튼 액션 처리 - 상자 열기
-    if (userMessage === 'openBox') {
-      if (!boxOpened) {
-        boxOpened = true;
-        boxDeclined = false; // 상자를 열었으므로 거절 상태 해제
-        return res.json({
-          message: `${playerName}님, 상자를 열었어요... 빵과 물이 들어있어요... 조금 더 오래 살 수 있겠네요. 이제 주변을 또 둘러볼까요?`,
-          image: 'images/hap.gif'
-        });
-      } else {
-        return res.json({
-          message: `${playerName}님, 상자는 이미 열었어요... 빵과 물이 들어있었죠.`,
-          image: 'images/sad.gif'
-        });
-      }
-    }
+// 🔥 버튼 액션 처리 - 상자 열지 않기
+if (userMessage === 'dontOpenBox') {
+  boxDeclined = true;
+  return res.json({
+    message: `${playerName}님, 알겠어요. 다른 곳을 살펴볼까요?`,
+    image: 'images/neutral.png'
+  });
+}
 
-    // 🔥 버튼 액션 처리 - 상자 열지 않기  
-    if (userMessage === 'dontOpenBox') {
-      if (!boxOpened) {
-        boxDeclined = true; // 상자를 열지 않기로 선택
-        return res.json({
-          message: `${playerName}님, 상자를 열지 않았어요... 아무 일도 일어나지 않았습니다. 이제 주변을 또 둘러볼까요?`,
-          image: 'images/Save-steve.gif'
-        });
-      } else {
-        return res.json({
-          message: `${playerName}님, 이미 상자를 열었는데요...`,
-          image: 'images/sad.gif'
-        });
-      }
-    }
+// 🔥 주변 환경 탐색 - 수정된 버전
+if ((userMessage.includes('주변') && (userMessage.includes('뭐') || userMessage.includes('무엇'))) || 
+    userMessage.includes('뭐가 있어') || userMessage.includes('뭐가 보여') ||
+    userMessage.includes('둘러보') || userMessage.includes('살펴보')) {
+  
+  // 상자를 이미 열었다면 - 바로 선반과 문 언급, 버튼 없음
+  if (boxOpened) {
+    return res.json({
+      message: `${playerName}님, 선반이 보여요. 그 옆에는 문도 있네요! 나갈 수 있을 것 같아요.`,
+      image: 'images/sup.gif'
+      // options 제거 - 버튼이 나타나지 않음
+    });
+  }
+  // 상자를 아직 열지 않았다면 (처음이든 거절했든) - 항상 버튼 표시
+  else {
+    return res.json({
+      message: `${playerName}님, 주변이 어둡고 축축한데, 오래된 나무 상자가 보이네요... 상자를 열어볼까요?`,
+      image: 'images/sup.gif',
+      options: [
+        { text: '상자를 열어보자', action: 'openBox' },
+        { text: '상자를 열지말자', action: 'dontOpenBox' }
+      ]
+    });
+  }
+}
 
-    // 상자 선택 후 다른 환경 탐색
-    if ((userMessage.includes('상자말고') && userMessage.includes('다른')) ||
-        (userMessage.includes('상자말고') && userMessage.includes('뭐')) ||
-        (userMessage.includes('다른') && userMessage.includes('없')) ||
-        (userMessage.includes('주변') && userMessage.includes('없')) ||
-        (boxOpened && (userMessage.includes('주변') || userMessage.includes('둘러보') || userMessage.includes('또')))) {
-      return res.json({ 
-        message: `${playerName}님, 선...반? 선반이 보이는 것 같아요. 그 옆에는 문도 있네요! 나갈 수 있을 것 같아요.` 
-      });
-    }
-
-    if (userMessage.includes('선반') && userMessage.includes('보자')) {
-      if (!keyFound) {
-        keyFound = true;
-        return res.json({ 
-          message: `${playerName}님, 먼지를 치우니 열쇠가 나왔어요... 이걸로 문을 열 수 있을까요?`,
-          image: 'images/hap.png' 
-        });
-      } else {
-        return res.json({ 
-          message: `${playerName}님, 선반을 다시 살펴봤지만 특별한 건 없어요...`,
-          image: 'images/sad.png' 
-        });
-      }
-    }
-
+// 🔥 상자 이외의 다른 것들 탐색 - 수정된 버전
+if ((userMessage.includes('상자말고') && userMessage.includes('다른')) ||
+    (userMessage.includes('상자말고') && userMessage.includes('뭐')) ||
+    (userMessage.includes('다른') && userMessage.includes('없')) ||
+    (userMessage.includes('주변') && userMessage.includes('없')) ||
+    (userMessage.includes('다른') && userMessage.includes('뭐')) ||
+    (userMessage.includes('또') && userMessage.includes('뭐'))) {
+  
+  // 상자를 열었든 안 열었든 선반과 문으로 유도, 버튼 없음
+  return res.json({ 
+    message: `${playerName}님, 선반이 보이는 것 같아요. 그 옆에는 문도 있네요! 나갈 수 있을 것 같아요.`,
+    image: 'images/sup.gif'
+    // options 제거 - 버튼이 나타나지 않음
+  });
+}
     // 나머지 기존 조건들...
 
     if (userMessage.includes('상자말고') && userMessage.includes('다른')) {
@@ -540,7 +633,7 @@ app.get('/get-player-name', (req, res) => {
   res.json({ name: playerName });
 });
 
-const PORT = 3000;
+const PORT = 4001;
 
 const start = () => {
   app.listen(PORT, async () => {
