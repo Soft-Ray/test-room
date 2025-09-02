@@ -511,41 +511,44 @@ h1, h2, h3 {
         }, 5000);
     }
 
-    // 🔥 챕터 전환 함수 수정 - 챕터 2로 이동 시 server2로 리다이렉트
-    function switchChapter(chapterNumber) {
-        if (chapterNumber === 2) {
-            localStorage.setItem('playerName', getPlayerName());
-            // server2가 3002 포트에서 실행 중이므로 해당 포트로 이동
-            window.location.href = 'http://localhost:3002/';
-            return;
-        }
-        
-        if (chapterNumber === 3) {
-            localStorage.setItem('playerName', getPlayerName());
-            window.location.href = 'http://localhost:3003/';
-            return;
-        }
-        
-        currentChapter = chapterNumber;
-        const chapterBtn = document.getElementById("chapterBtn");
-        if (chapterBtn) {
-            chapterBtn.textContent = `Chapter ${currentChapter}`;
-        }
-        const responseBox = document.getElementById("responseBox");
-        if (responseBox) {
-            responseBox.innerHTML = '';
-        }
-        displayMessage('SYSTEM', `챕터 ${currentChapter}로 전환되었습니다.`, 'narration');
-        hideDropdown();
-        const sceneImage = document.getElementById("sceneImage");
-        if (sceneImage) {
-            sceneImage.src = 'Save-steve.gif';
-        }
-        updateStatusText('Save-steve.gif');
-        hideOverlayAndTransition();
-        
-        showTextForFiveSeconds();
+function switchChapter(chapterNumber) {
+    console.log(`🔥 switchChapter 호출됨: ${chapterNumber}`);
+    
+    if (chapterNumber === 2) {
+        localStorage.setItem('playerName', getPlayerName());
+        console.log(`🔥 챕터 2로 이동: 이름 ${getPlayerName()} 저장됨`);
+        window.location.href = 'http://localhost:4002/';
+        return;
     }
+    
+    if (chapterNumber === 3) {
+        localStorage.setItem('playerName', getPlayerName());
+        console.log(`🔥 챕터 3으로 이동: 이름 ${getPlayerName()} 저장됨`);
+        window.location.href = 'http://localhost:4003/';
+        return;
+    }
+    
+    currentChapter = chapterNumber;
+    const chapterBtn = document.getElementById("chapterBtn");
+    if (chapterBtn) {
+        chapterBtn.textContent = `Chapter ${currentChapter}`;
+    }
+    const responseBox = document.getElementById("responseBox");
+    if (responseBox) {
+        responseBox.innerHTML = '';
+    }
+    displayMessage('SYSTEM', `챕터 ${currentChapter}로 전환되었습니다.`, 'narration');
+    hideDropdown();
+    const sceneImage = document.getElementById("sceneImage");
+    if (sceneImage) {
+        sceneImage.src = 'Save-steve.gif';
+    }
+    updateStatusText('Save-steve.gif');
+    hideOverlayAndTransition();
+    
+    showTextForFiveSeconds();
+}
+
 
     function toggleDropdown() {
         const dropdown = document.getElementById("chapterList");
@@ -565,7 +568,7 @@ h1, h2, h3 {
         const statusText = document.getElementById("statusText");
         const image = document.getElementById("sceneImage");
 
-        if (!statusText || !image) return;
+if (!statusText || !image) return;
 
         let filename = imageSrc.split('/').pop().split('.')[0];
         
@@ -713,10 +716,23 @@ h1, h2, h3 {
         responseBox.scrollTop = responseBox.scrollHeight;
     }
 
-// 기존 handleOptionClick 함수를 이것으로 완전히 교체하세요
 
 // 옵션 버튼 클릭 처리 함수 (수정된 버전)
 function handleOptionClick(action, buttonText) {
+    // 🔥 상자 관련 액션 처리 추가
+    if (action === 'openBox' || action === 'dontOpenBox') {
+        // 사용자가 선택한 버튼 텍스트를 화면에 표시
+        displayMessage(buttonText, true);
+        
+        // 기존 옵션 버튼들 제거
+        const optionContainers = document.querySelectorAll('.message-options');
+        optionContainers.forEach(container => container.remove());
+        
+        // 서버에 액션 전송
+        sendMessage(action);
+        return;
+    }
+
     // 버튼 입력 모드의 도형 버튼들 처리
     if (action.startsWith('button_') && ['button_별', 'button_네모', 'button_동그라미', 'button_세모'].includes(action)) {
         buttonInputMode = true;
@@ -801,6 +817,8 @@ function handleOptionClick(action, buttonText) {
 }
 
 // 🔥 새로 추가할 함수: 버튼을 서버에 전송 (UI 업데이트는 하지 않음)
+
+// 🔥 중복된 sendButtonToServer 함수 제거하고 하나로 통합
 async function sendButtonToServer(action) {
     try {
         const response = await fetch('/chat', {
@@ -824,56 +842,13 @@ async function sendButtonToServer(action) {
         console.error('버튼 서버 전송 오류:', error);
     }
 }
-    
-// 🔥 임시: 정답 입력 시 성공 처리를 강제하는 함수
+
+// 🔥 forceSuccessOnCorrectSequence 함수 정의 (또는 제거)
 function forceSuccessOnCorrectSequence() {
-    const originalHandleOptionClick = handleOptionClick;
-    
-    window.handleOptionClick = function(action, buttonText) {
-        // 입력 완료 시 정답 여부 확인
-        if (action === 'button_submit') {
-            const correctSequence = ['★', '■', '●', '▲'];
-            const isCorrect = buttonSequence.length === 4 && 
-                            buttonSequence.every((symbol, index) => symbol === correctSequence[index]);
-            
-            if (isCorrect) {
-                console.log('🎯 정답 감지! 강제로 성공 처리');
-                
-                // 사용자 입력 표시
-                const finalSequence = buttonSequence.join(' ');
-                displayMessage(finalSequence, true);
-                
-                // 성공 메시지 표시
-                setTimeout(() => {
-                    displayMessage('맞았어요! 금고가 열렸습니다! 안에 쪽지가 있네요.', false);
-                    updateStatusText('images/hap.gif');
-                    
-                    // 버튼들 제거
-                    const optionContainers = document.querySelectorAll('.message-options');
-                    optionContainers.forEach(container => container.remove());
-                    
-                    // 상태 초기화
-                    buttonInputMode = false;
-                    buttonSequence = [];
-                    
-                    // 텍스트 입력창 비우기
-                    const promptInput = document.getElementById("promptInput");
-                    if (promptInput) {
-                        promptInput.value = '';
-                    }
-                }, 500);
-                
-                return;
-            }
-        }
-        
-        // 기존 함수 호출
-        originalHandleOptionClick(action, buttonText);
-    };
+    console.log('🔥 forceSuccessOnCorrectSequence 함수 호출됨 (현재는 비활성화)');
+    // 이 함수는 서버에서 처리하므로 클라이언트에서는 비활성화
 }
 
-// 함수 활성화
-forceSuccessOnCorrectSequence();
 // 타이핑 효과 표시 함수
     function showTypingIndicator() {
         const responseBox = document.getElementById('responseBox');
@@ -895,8 +870,10 @@ forceSuccessOnCorrectSequence();
         }
     }
 
- // 🔥 서버 메시지 전송 함수 (옵션 버튼용) - 수정된 버전
+ /// 🔥 sendMessage 함수 수정 (구문 오류 제거)
 async function sendMessage(message) {
+    const currentName = getPlayerName();
+  
     try {
         showTypingIndicator();
         
@@ -907,7 +884,7 @@ async function sendMessage(message) {
             },
             body: JSON.stringify({ 
                 message: message,
-                name: getPlayerName()
+                name: currentName
             }),
         });
 
@@ -917,25 +894,27 @@ async function sendMessage(message) {
         
         console.log('📍 data.message 타입:', typeof data.message);
         console.log('📍 data.message 값:', data.message);
+        console.log('📍 data.clear:', data.clear); // 🔥 clear 플래그 확인
         
-        // 🔥 안전한 메시지 처리
-          if (data.message) {
+        // 🔥 메시지 처리 개선
+        if (data.message) {
             if (Array.isArray(data.message)) {
                 // 배열 메시지 처리
                 data.message.forEach(msg => {
-                    if (msg.type === 'steve' && msg.text) {
-                        displayMessage(msg.text, false);
-                    } else if (msg.type === 'narration' && msg.text) {
-                        displayMessage('SYSTEM', msg.text, 'narration');
-                    } else if (msg.type === 'user' && msg.text) {
-                        displayMessage(msg.text, true);
+                    if (msg && msg.text) {
+                        if (msg.type === 'steve') {
+                            displayMessage(msg.text, false);
+                        } else if (msg.type === 'narration') {
+                            displayMessage('SYSTEM', msg.text, 'narration');
+                        } else if (msg.type === 'user') {
+                            displayMessage(msg.text, true);
+                        }
                     }
                 });
             } else if (typeof data.message === 'string' && data.message.trim() !== '') {
                 // 단일 문자열 메시지 처리
                 displayMessage(data.message, false);
             }
-            // null이나 빈 문자열은 무시
         }
         
         // 이미지 변경
@@ -943,12 +922,51 @@ async function sendMessage(message) {
             updateStatusText(data.image);
         }
         
-        // 옵션 버튼 표시 - data.options가 있을 때만
+        // 옵션 버튼 표시
         if (data.options && data.options.length > 0) {
             displayOptions(data.options);
         }
         
-        // 🔥 안전한 게임 오버 처리
+        // 🔥 forceNote 플래그 처리 (쪽지 강제 표시)
+        if (data.forceNote) {
+            console.log('🔥 쪽지 강제 표시 플래그 감지!');
+        }
+        
+        // 🔥 클리어 처리 - 챕터 전환
+        if (data.clear) {
+            console.log('🔥 클리어 플래그 감지! 다음 챕터로 전환합니다.');
+            setTimeout(() => {
+                showOverlayAndButton(currentChapter + 1);
+            }, 2000);
+        }
+        
+        // 🔥 메시지 내용으로 챕터 전환 감지 (추가 안전장치)
+        if (typeof data.message === 'string') {
+            if (data.message.includes('책장이... 문이였네요') || 
+                data.message.includes('드디어 탈출할 수 있을 것 같아요') ||
+                data.message.includes('탈출에 성공했습니다')) {
+                console.log('🔥 메시지 내용으로 챕터 전환 감지!');
+                setTimeout(() => {
+                    showOverlayAndButton(currentChapter + 1);
+                }, 2000);
+            }
+        } else if (Array.isArray(data.message)) {
+            const hasChapterTransition = data.message.some(msg => 
+                msg && msg.text && (
+                    msg.text.includes('책장이... 문이였네요') ||
+                    msg.text.includes('드디어 탈출할 수 있을 것 같아요') ||
+                    msg.text.includes('탈출에 성공했습니다')
+                )
+            );
+            if (hasChapterTransition) {
+                console.log('🔥 배열 메시지에서 챕터 전환 감지!');
+                setTimeout(() => {
+                    showOverlayAndButton(currentChapter + 1);
+                }, 2000);
+            }
+        }
+        
+        // 게임 오버 처리
         if (typeof data.message === 'string' && data.message.includes('대화를 이어갈 수 없다는 게 슬프네요')) {
             setTimeout(() => {
                 showGameOverScreen();
@@ -964,12 +982,6 @@ async function sendMessage(message) {
             }
         }
         
-        // 클리어 처리
-        if (data.clear) {
-            setTimeout(() => {
-                showOverlayAndButton(currentChapter + 1);
-            }, 2000);
-        }
     } catch (error) {
         hideTypingIndicator();
         console.error('Error:', error);
@@ -1005,30 +1017,6 @@ async function sendMessage(message) {
             displayMessage('나레이션', '문이 열렸습니다. 다음 방으로 이동해주세요.', 'narration');
             await new Promise(r => setTimeout(r, 2000));
             showOverlayAndButton(currentChapter + 1);
-            return;
-        }
-
-        // 상자 관련 처리
-        const boxKeywords = ["상자", "상자?", "무슨상자", "무슨상자?", "무슨 상자", "무슨 상자?", "어떤상자", "어떤상자?", "어떤 상자", "어떤 상자?"];
-        if (boxKeywords.includes(message) && !boxOpened) {
-            displayMessage('스티브', '작은 나무 상자예요. 이 상자를 열어볼까요?', 'steve');
-
-            setTimeout(() => {
-                const responseBox = document.getElementById("responseBox");
-                if (responseBox) {
-                    const choiceContainer = document.createElement('div');
-                    choiceContainer.classList.add('choice-container');
-                    choiceContainer.innerHTML = `
-                        <button class="choice-btn" onclick="handleChoice('열어보자')">열어보자</button>
-                        <button class="choice-btn" onclick="handleChoice('열지말자')">열지말자</button>
-                    `;
-                    responseBox.appendChild(choiceContainer);
-                    responseBox.scrollTop = responseBox.scrollHeight;
-                }
-            }, 2000);
-            return;
-        } else if (boxKeywords.includes(message) && boxOpened) {
-            displayMessage('스티브', '그 상자는 이미 확인했어요. 주변을 한 번 더 살펴볼까요?', 'steve');
             return;
         }
 
@@ -1114,26 +1102,31 @@ async function sendMessage(message) {
         }
     }
 
-    function showOverlayAndButton(chapterNumber) {
-        nextChapterNumber = chapterNumber;
-        const overlay = document.getElementById("chapter-transition-overlay");
-        const text = document.getElementById("chapter-transition-text");
+ // 🔥 showOverlayAndButton 함수에 디버깅 추가
+function showOverlayAndButton(chapterNumber) {
+    console.log(`🔥 showOverlayAndButton 호출됨: ${chapterNumber}`);
+    
+    nextChapterNumber = chapterNumber;
+    const overlay = document.getElementById("chapter-transition-overlay");
+    const text = document.getElementById("chapter-transition-text");
 
-        if (overlay) {
-            overlay.style.display = 'flex';
-            setTimeout(() => {
-                overlay.style.opacity = 1;
-                overlay.style.pointerEvents = 'auto';
-                
-                if (text) {
-                    text.style.animation = 'none';
-                    text.offsetHeight;
-                    text.style.animation = 'slideIn 1.5s forwards';
-                }
-            }, 10);
-        }
+    if (overlay) {
+        console.log(`🔥 오버레이 표시 시작`);
+        overlay.style.display = 'flex';
+        setTimeout(() => {
+            overlay.style.opacity = 1;
+            overlay.style.pointerEvents = 'auto';
+            
+            if (text) {
+                text.style.animation = 'none';
+                text.offsetHeight;
+                text.style.animation = 'slideIn 1.5s forwards';
+            }
+        }, 10);
+    } else {
+        console.error('🔥 chapter-transition-overlay 요소를 찾을 수 없습니다!');
     }
-
+}
     function hideOverlayAndTransition() {
         const overlay = document.getElementById("chapter-transition-overlay");
         if (overlay) {
@@ -1176,25 +1169,6 @@ async function sendMessage(message) {
         }
     }
 
-    function handleChoice(choice) {
-        console.log("선택한 선택지:", choice);
-
-        if (choice === '열어보자') {
-            boxOpened = true;
-            displayMessage('스티브', '상자를 열어봤어요. 안에 무언가 있는 것 같아요... 빵과 물이 들어있었네요...!', 'steve');
-        } else if (choice === '열지말자') {
-            displayMessage('스티브', '그래요... 괜히 무서우니까 그냥 두죠.', 'steve');
-        }
-
-        const choiceButtons = document.querySelector('.choice-container');
-        if (choiceButtons) choiceButtons.remove();
-
-        if (boxOpened) {
-            setTimeout(() => {
-                displayMessage('스티브', '음식이 있다니 좋네요! 다른 걸 더 찾아볼까요?', 'steve');
-            }, 1500);
-        }
-    }
 
     function showGameOverScreen() {
         console.log('게임 오버 화면 표시 시도');
@@ -1312,13 +1286,36 @@ async function sendMessage(message) {
         }
     });
 
-    document.addEventListener('click', (e) => {
-        const dd = document.getElementById("chapterList");
-        const btn = document.getElementById("chapterBtn");
-        if (dd && btn && !btn.contains(e.target) && !dd.contains(e.target)) {
-            dd.style.display = 'none';
+document.addEventListener('DOMContentLoaded', async function() {
+  // URL 파라미터에서 이름 확인
+  const urlParams = new URLSearchParams(window.location.search);
+  const nameFromUrl = urlParams.get('playerName');
+  
+  if (nameFromUrl && nameFromUrl.trim() !== '' && nameFromUrl !== '플레이어') {
+    const decodedName = decodeURIComponent(nameFromUrl);
+    console.log(`📥 URL에서 이름 로드: ${decodedName}`);
+    
+    // 서버에 이름 동기화
+    try {
+      const response = await fetch('/sync-name', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: decodedName })
+      });
+      
+      if (response.ok) {
+        console.log('✅ 서버 이름 동기화 성공');
+        // 글로벌 변수에도 저장
+        if (typeof setCurrentPlayerName === 'function') {
+          setCurrentPlayerName(decodedName);
         }
-    });
+      }
+    } catch (error) {
+      console.log('❌ 서버 이름 동기화 실패:', error);
+    }
+  }
+});
+
 
     window.gameUtils = {
         setPlayerName,
