@@ -67,7 +67,7 @@ app.post('/sync-name', (req, res) => {
 // 🔥 다른 서버에서 이름을 가져오는 함수
 async function fetchPlayerNameFromOtherServers() {
   try {
-    const response = await fetch('http://localhost:4002/');
+    const response = await fetch('http://localhost:5002/');
     const data = await response.json();
     if (data.name && data.name !== '플레이어') {
       playerName = data.name;
@@ -79,7 +79,7 @@ async function fetchPlayerNameFromOtherServers() {
   }
   
   try {
-    const response = await fetch('http://localhost:4003/');
+    const response = await fetch('http://localhost:5003/');
     const data = await response.json();
     if (data.name && data.name !== '플레이어') {
       playerName = data.name;
@@ -93,12 +93,12 @@ async function fetchPlayerNameFromOtherServers() {
 app.use(cors({
   origin: function (origin, callback) {
     const allowedOrigins = [
-      'http://localhost:4001',
-      'http://localhost:4002', 
-      'http://localhost:4003',
-      'http://127.0.0.1:4001',
-      'http://127.0.0.1:4002',
-      'http://127.0.0.1:4003',
+      'http://localhost:5001',
+      'http://localhost:5002', 
+      'http://localhost:5003',
+      'http://127.0.0.1:5001',
+      'http://127.0.0.1:5002',
+      'http://127.0.0.1:5003',
       'http://127.0.0.1:5500', // 🔥 Live Server 포트 추가
       'http://localhost:5500',  // 🔥 Live Server 포트 추가
       null // 로컬 파일 접근 허용
@@ -339,7 +339,7 @@ function createContext() {
 
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'index.html'));
+  res.sendFile(path.join(__dirname, '..', 'server.html'));
 });
 
 
@@ -363,7 +363,7 @@ app.post('/set-name', (req, res) => {
 // 🔥 server3에서 이름을 가져오는 함수 (백업용)
 async function fetchPlayerNameFromServer3() {
   try {
-    const response = await fetch('http://localhost:4003/get-player-name');
+    const response = await fetch('http://localhost:5003/get-player-name');
     const data = await response.json();
     if (data.name && data.name !== '플레이어') {
       playerName = data.name;
@@ -633,7 +633,7 @@ app.get('/get-player-name', (req, res) => {
   res.json({ name: playerName });
 });
 
-const PORT = 4001;
+const PORT = 5001;
 
 const start = () => {
   app.listen(PORT, async () => {
