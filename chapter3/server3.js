@@ -7,7 +7,7 @@ import { fileURLToPath } from 'url';
 import OpenAI from 'openai';
 
 const app = express();
-const port = 4003;
+const port = 5003;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,12 +16,12 @@ const __dirname = path.dirname(__filename);
 app.use(cors({
   origin: function (origin, callback) {
     const allowedOrigins = [
-      'http://localhost:4001',
-      'http://localhost:4002', 
-      'http://localhost:4003',
-      'http://127.0.0.1:4001',
-      'http://127.0.0.1:4002',
-      'http://127.0.0.1:4003',
+      'http://localhost:5001',
+      'http://localhost:5002', 
+      'http://localhost:5003',
+      'http://127.0.0.1:5001',
+      'http://127.0.0.1:5002',
+      'http://127.0.0.1:5003',
       'http://127.0.0.1:5500', // 🔥 Live Server 포트 추가
       'http://localhost:5500',  // 🔥 Live Server 포트 추가
       null // 로컬 파일 접근 허용
@@ -107,8 +107,8 @@ app.post('/set-name', (req, res) => {
 // 다른 서버들에게 이름을 전송하는 함수
 async function broadcastPlayerName(playerName, clientId) {
   const servers = [
-    'http://localhost:4001/set-name',  // server1
-    'http://localhost:4002/set-name'   // server2
+    'http://localhost:5001/set-name',  // server1
+    'http://localhost:5002/set-name'   // server2
   ];
 
   const promises = servers.map(async (url) => {
@@ -138,8 +138,8 @@ async function broadcastPlayerName(playerName, clientId) {
 // 🔥 다른 서버들에서 이름을 가져오는 함수
 async function fetchPlayerNameFromOtherServers(clientId) {
   const servers = [
-    'http://localhost:4001',  // server1
-    'http://localhost:4002'   // server2
+    'http://localhost:5001',  // server1
+    'http://localhost:5002'   // server2
   ];
 
   for (const url of servers) {
