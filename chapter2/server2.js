@@ -43,7 +43,7 @@ app.use(cors({
 }));
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '..')));
+app.use(express.static(path.join(__dirname, '../')));
 
 // OpenAI 초기화
 const openai = new OpenAI({
