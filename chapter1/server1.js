@@ -636,8 +636,8 @@ app.get('/get-player-name', (req, res) => {
 const PORT = 5001;
 
 const start = () => {
-  app.listen(PORT, async () => {
-    console.log(`✅ Chapter 2 서버 실행 중: http://localhost:${PORT}`);
+  app.listen(PORT, '0.0.0.0', async () => {  // ← 모든 네트워크 인터페이스 허용
+    console.log(`✅ Chapter 2 서버 실행 중: http://192.168.0.10:${PORT}`);
     
     // 🔥 서버 시작시 server3에서 이름 가져오기 시도
     await fetchPlayerNameFromServer3();
