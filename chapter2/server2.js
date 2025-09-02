@@ -762,12 +762,12 @@ app.use((error, req, res, next) => {
 const PORT = 5002;
 
 export function start() {
-  app.listen(PORT, () => {
-    console.log(`✅ Chapter 2 서버 실행 중: http://localhost:${PORT}`);
-    console.log(`🤖 OpenAI API 키 상태: ${process.env.OPENAI_API_KEY ? '설정됨' : '설정 안됨'}`);
-    console.log(`📝 초기 플레이어 이름: "${playerName}"`);
-    console.log(`🌐 CORS 정책: origin null 포함 모든 로컬 도메인 허용`);
-  });
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`✅ Chapter 2 서버 실행 중: http://192.168.0.10:${PORT}`);
+  console.log(`🤖 OpenAI API 키 상태: ${process.env.OPENAI_API_KEY ? '설정됨' : '설정 안됨'}`);
+  console.log(`📝 초기 플레이어 이름: "${playerName}"`);
+  console.log(`🌐 CORS 정책: origin null 포함 모든 로컬 도메인 허용`);
+});
 }
 
 // 직접 실행할 때도 서버 시작
