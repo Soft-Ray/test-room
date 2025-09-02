@@ -642,3 +642,7 @@ app.listen(PORT, async () => {
   // 서버 시작 시 다른 서버에서 이름 가져오기 시도
   await fetchPlayerNameFromOtherServers();
 });
+
+
+
+export { start };
