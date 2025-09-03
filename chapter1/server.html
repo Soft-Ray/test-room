@@ -511,41 +511,42 @@ h1, h2, h3 {
         }, 5000);
     }
 
-const CH2 = 'https://test-room-1-9sdc.onrender.com';
-const CH3 = 'https://test-room-2.onrender.com';
+      const CH2 = 'https://test-room-o4yh.onrender.com';
+      const CH3 = 'https://test-room-2.onrender.com';
 
-  function switchChapter(chapterNumber) {
-    const name = encodeURIComponent(getPlayerName());
-    if (chapterNumber === 2) {
-      localStorage.setItem('playerName', getPlayerName());
-      window.location.href = `${CH2}/?playerName=${name}`;
-      return;
-    }
-    if (chapterNumber === 3) {
-      localStorage.setItem('playerName', getPlayerName());
-      window.location.href = `${CH3}/?playerName=${name}`;
-      return;
-    }
+function switchChapter(chapterNumber) {
+  const name = encodeURIComponent(getPlayerName());
+
+  if (chapterNumber === 2) {
+    localStorage.setItem('playerName', getPlayerName());
+    window.location.href = `${CH2}/?playerName=${name}`;
+    return;
+  }
+  if (chapterNumber === 3) {
+    localStorage.setItem('playerName', getPlayerName());
+    window.location.href = `${CH3}/?playerName=${name}`;
+    return;
+  }
     
-    currentChapter = chapterNumber;
-    const chapterBtn = document.getElementById("chapterBtn");
-    if (chapterBtn) {
-        chapterBtn.textContent = `Chapter ${currentChapter}`;
-    }
-    const responseBox = document.getElementById("responseBox");
-    if (responseBox) {
-        responseBox.innerHTML = '';
-    }
-    displayMessage('SYSTEM', `챕터 ${currentChapter}로 전환되었습니다.`, 'narration');
-    hideDropdown();
-    const sceneImage = document.getElementById("sceneImage");
-    if (sceneImage) {
-        sceneImage.src = 'Save-steve.gif';
-    }
-    updateStatusText('Save-steve.gif');
-    hideOverlayAndTransition();
-    
-    showTextForFiveSeconds();
+  currentChapter = chapterNumber;
+  const chapterBtn = document.getElementById("chapterBtn");
+  if (chapterBtn) {
+    chapterBtn.textContent = `Chapter ${currentChapter}`;
+  }
+  const responseBox = document.getElementById("responseBox");
+  if (responseBox) {
+    responseBox.innerHTML = '';
+  }
+  displayMessage('SYSTEM', `챕터 ${currentChapter}로 전환되었습니다.`, 'narration');
+  hideDropdown();
+  const sceneImage = document.getElementById("sceneImage");
+  if (sceneImage) {
+    sceneImage.src = 'Save-steve.gif';
+  }
+  updateStatusText('Save-steve.gif');
+  hideOverlayAndTransition();
+
+  showTextForFiveSeconds();
 }
 
     function toggleDropdown() {
@@ -1258,6 +1259,5 @@ function showOverlayAndButton(chapterNumber) {
 </script>
 </body>
 </html>
-
 
 
