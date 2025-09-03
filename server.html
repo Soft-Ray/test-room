@@ -511,21 +511,20 @@ h1, h2, h3 {
         }, 5000);
     }
 
-function switchChapter(chapterNumber) {
-    console.log(`🔥 switchChapter 호출됨: ${chapterNumber}`);
-    
+      const CH2 = 'server.html';
+      const CH3 = 'index3.html';
+
+  function switchChapter(chapterNumber) {
+    const name = encodeURIComponent(getPlayerName());
     if (chapterNumber === 2) {
-        localStorage.setItem('playerName', getPlayerName());
-        console.log(`🔥 챕터 2로 이동: 이름 ${getPlayerName()} 저장됨`);
-        window.location.href = 'http://localhost:5002/';
-        return;
+      localStorage.setItem('playerName', getPlayerName());
+      window.location.href = `${CH2}/?playerName=${name}`;
+      return;
     }
-    
     if (chapterNumber === 3) {
-        localStorage.setItem('playerName', getPlayerName());
-        console.log(`🔥 챕터 3으로 이동: 이름 ${getPlayerName()} 저장됨`);
-        window.location.href = 'http://localhost:5003/';
-        return;
+      localStorage.setItem('playerName', getPlayerName());
+      window.location.href = `${CH3}/?playerName=${name}`;
+      return;
     }
     
     currentChapter = chapterNumber;
@@ -1259,3 +1258,4 @@ function showOverlayAndButton(chapterNumber) {
 </script>
 </body>
 </html>
+
