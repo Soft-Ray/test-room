@@ -9,8 +9,6 @@ dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const express = require('express');
-const path = require('path');
 const app = express();
 
 // CORS 설정 - Render 환경에 맞게 수정
@@ -43,7 +41,7 @@ app.use(cors({
 }));
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../')));
+app.use(express.static(path.join(__dirname, './'), { index: false }));
 
 // OpenAI 초기화
 const openai = new OpenAI({
@@ -188,8 +186,7 @@ app.get('/', (req, res) => {
     playerName = decodeURIComponent(playerNameFromUrl.trim());
     console.log(`[Server2] URL에서 플레이어 이름 즉시 설정: "${playerName}"`);
   }
-  
-  res.sendFile(path.join(__dirname, '..', 'server.html'));
+  res.sendFile(path.join(__dirname, '.', 'server.html'));
 });
 
 // 플레이어 이름 관련 엔드포인트들
