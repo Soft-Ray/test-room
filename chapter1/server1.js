@@ -334,7 +334,12 @@ function createContext() {
 
 
 app.get('/', (req, res) => {
-res.sendFile(path.join(__dirname, 'server.html'));
+  const playerNameFromUrl = req.query.playerName;
+  if (playerNameFromUrl && playerNameFromUrl.trim() !== '' && playerNameFromUrl !== '플레이어') {
+    playerName = decodeURIComponent(playerNameFromUrl.trim());
+    console.log(`[Server1] URL에서 플레이어 이름 즉시 설정: "${playerName}"`);
+  }
+  res.sendFile(path.join(__dirname, '.', 'server.html'));
 });
 
 app.post('/chat', async (req, res) => {
@@ -590,3 +595,4 @@ const start = () => {
 if (import.meta.url === `file://${process.argv[1]}`) {
   start();
 }
+
