@@ -334,7 +334,7 @@ function createContext() {
 
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'server1.html'));
+  res.sendFile(path.join(__dirname, '..', 'server.html'));
 });
 
 app.post('/chat', async (req, res) => {
@@ -590,5 +590,6 @@ const start = () => {
 if (import.meta.url === `file://${process.argv[1]}`) {
   start();
 }
+
 
 
