@@ -391,7 +391,6 @@ h1, h2, h3 {
   </style>
 
 </head>
-
 <body>
   <!-- 챕터 선택 버튼은 숨기지만 삭제하지 않음 -->
   <div class="chapter-dropdown">
@@ -517,15 +516,15 @@ h1, h2, h3 {
 function switchChapter(chapterNumber) {
   const name = encodeURIComponent(getPlayerName());
 
- if (chapterNumber === 2) {
+  if (chapterNumber === 2) {
     localStorage.setItem('playerName', getPlayerName());
-    // 직접 Render 링크로 연결
-    window.location.href = `https://test-room-1-9sdc.onrender.com`;
+    // 플레이어 이름을 URL 파라미터로 전달하도록 수정
+    window.location.href = `https://test-room-1-9sdc.onrender.com/?playerName=${name}`;
     return;
   }
   if (chapterNumber === 3) {
     localStorage.setItem('playerName', getPlayerName());
-    window.location.href = `https://test-room-2.onrender.com`;
+    window.location.href = `https://test-room-2.onrender.com/?playerName=${name}`;
     return;
   }
     
