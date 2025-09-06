@@ -511,20 +511,21 @@ h1, h2, h3 {
         }, 5000);
     }
 
-      const CH2 = 'https://test-room-o4yh.onrender.com';
+      const CH2 = 'https://test-room-1-9sdc.onrender.com';
       const CH3 = 'https://test-room-2.onrender.com';
 
 function switchChapter(chapterNumber) {
   const name = encodeURIComponent(getPlayerName());
 
-  if (chapterNumber === 2) {
+ if (chapterNumber === 2) {
     localStorage.setItem('playerName', getPlayerName());
-    window.location.href = `${CH2}/?playerName=${name}`;
+    // 직접 Render 링크로 연결
+    window.location.href = `https://test-room-1-9sdc.onrender.com`;
     return;
   }
   if (chapterNumber === 3) {
     localStorage.setItem('playerName', getPlayerName());
-    window.location.href = `${CH3}/?playerName=${name}`;
+    window.location.href = `https://test-room-2.onrender.com`;
     return;
   }
     
