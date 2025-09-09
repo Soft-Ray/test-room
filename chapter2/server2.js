@@ -41,7 +41,7 @@ app.use(cors({
 }));
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, './'), { index: false }));
+app.use(express.static(path.join(__dirname, './'), { index: 'server.html' }));
 
 // OpenAI 초기화
 const openai = new OpenAI({
