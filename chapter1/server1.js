@@ -42,7 +42,7 @@ app.use(cors({
 }));
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, './'), { index: 'server.html' }));
+app.use(express.static(path.join(__dirname, '/')));
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
