@@ -886,37 +886,48 @@ async function sendMessage(message) {
             console.log('🔥 쪽지 강제 표시 플래그 감지!');
         }
         
-        if (data.clear) {
-            console.log('🔥 클리어 플래그 감지! 다음 챕터로 전환합니다.');
-            setTimeout(() => {
-                showOverlayAndButton(currentChapter + 1);
-            }, 2000);
-        }
+        // sendMessage 함수에서 이 부분을 찾아 수정:
+if (data.clear) {
+    console.log('🔥 클리어 플래그 감지! 다음 챕터로 전환합니다.');
+    setTimeout(() => {
+        showOverlayAndButton(3); // Chapter 2에서는 3으로 가야 함
+    }, 2000);
+}
+
         
-        if (typeof data.message === 'string') {
-            if (data.message.includes('책장이... 문이였네요') || 
-                data.message.includes('드디어 탈출할 수 있을 것 같아요') ||
-                data.message.includes('탈출에 성공했습니다')) {
-                console.log('🔥 메시지 내용으로 챕터 전환 감지!');
-                setTimeout(() => {
-                    showOverlayAndButton(currentChapter + 1);
-                }, 2000);
-            }
-        } else if (Array.isArray(data.message)) {
-            const hasChapterTransition = data.message.some(msg => 
-                msg && msg.text && (
-                    msg.text.includes('책장이... 문이였네요') ||
-                    msg.text.includes('드디어 탈출할 수 있을 것 같아요') ||
-                    msg.text.includes('탈출에 성공했습니다')
-                )
-            );
-            if (hasChapterTransition) {
-                console.log('🔥 배열 메시지에서 챕터 전환 감지!');
-                setTimeout(() => {
-                    showOverlayAndButton(currentChapter + 1);
-                }, 2000);
-            }
-        }
+// sendMessage 함수에서 이 부분을 찾아 수정:
+if (data.clear) {
+    console.log('🔥 클리어 플래그 감지! 다음 챕터로 전환합니다.');
+    setTimeout(() => {
+        showOverlayAndButton(3); // Chapter 2에서는 3으로 가야 함
+    }, 2000);
+}
+
+// 또는 메시지 내용으로도 감지하도록 추가:
+if (typeof data.message === 'string') {
+    if (data.message.includes('책장이... 문이었네요') || 
+        data.message.includes('드디어 탈출할 수 있을 것 같아요') ||
+        data.message.includes('탈출에 성공했습니다')) {
+        console.log('🔥 메시지 내용으로 챕터 전환 감지!');
+        setTimeout(() => {
+            showOverlayAndButton(3);
+        }, 2000);
+    }
+} else if (Array.isArray(data.message)) {
+    const hasChapterTransition = data.message.some(msg => 
+        msg && msg.text && (
+            msg.text.includes('책장이... 문이었네요') ||
+            msg.text.includes('드디어 탈출할 수 있을 것 같아요') ||
+            msg.text.includes('탈출에 성공했습니다')
+        )
+    );
+    if (hasChapterTransition) {
+        console.log('🔥 배열 메시지에서 챕터 전환 감지!');
+        setTimeout(() => {
+            showOverlayAndButton(3);
+        }, 2000);
+    }
+}
         
         // 게임 오버 처리
         if (typeof data.message === 'string' && data.message.includes('대화를 이어갈 수 없다는 게 슬프네요')) {
@@ -1011,6 +1022,14 @@ async function sendMessage(message) {
                 data.message.forEach((msg) => {
                     const role = msg.type === 'narration' ? 'narration' : 'steve';
                     displayMessage(msg.type === 'narration' ? 'SYSTEM' : '스티브', msg.text, role);
+
+if (message.includes('빨간') && message.includes('노란') && message.includes('흰') && 
+    message.includes('파란') && message.includes('초록') && message.includes('책을 꽂')) {
+    console.log('🔥 강제 챕터 전환 트리거!');
+    setTimeout(() => {
+        showOverlayAndButton(3);
+    }, 1000);
+}
 
                     if (msg.type === 'steve' && (
                         msg.text.includes('문이 열렸어요') || 
@@ -1201,6 +1220,11 @@ function showOverlayAndButton(chapterNumber) {
     document.addEventListener('DOMContentLoaded', () => {
         fetchPlayerName();
         
+            document.getElementById("next-chapter-btn").addEventListener("click", () => {
+        const name = encodeURIComponent(getPlayerName());
+        window.location.href = `https://test-room-1-9sdc.onrender.com/?playerName=${name}`;
+    });
+
         const nextChapterBtn = document.getElementById("next-chapter-btn");
         if (nextChapterBtn) {
             nextChapterBtn.addEventListener("click", () => {
