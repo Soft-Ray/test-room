@@ -42,7 +42,7 @@ app.use(cors({
 }));
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '/')));
+app.use(express.static(path.join(__dirname, './'), { index: 'server.html' }));
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -334,12 +334,7 @@ function createContext() {
 
 
 app.get('/', (req, res) => {
-  const playerNameFromUrl = req.query.playerName;
-  if (playerNameFromUrl && playerNameFromUrl.trim() !== '' && playerNameFromUrl !== '플레이어') {
-    playerName = decodeURIComponent(playerNameFromUrl.trim());
-    console.log(`[Server1] URL에서 플레이어 이름 즉시 설정: "${playerName}"`);
-  }
-  res.sendFile(path.join(__dirname, '.', 'server.html'));
+res.sendFile(path.join(__dirname, 'server.html'));
 });
 
 app.post('/chat', async (req, res) => {
@@ -595,4 +590,3 @@ const start = () => {
 if (import.meta.url === `file://${process.argv[1]}`) {
   start();
 }
-
