@@ -421,6 +421,10 @@ skipButton.addEventListener('click', () => {
 retryButton.addEventListener('click', () => {
   videoContainer.style.display = 'none';
   retryButton.style.display = 'none';
+
+    // YouTube iframe 숨기기
+  youtubeVideo.style.display = 'none';
+  youtubeVideo.src = 'https://youtu.be/3Jh6S8E-5A4';
   
   if (isChoice3Playing) {
     // Choice 3 영상이 끝난 후에는 GIF를 숨기고 시스템 삭제 입력만 표시
