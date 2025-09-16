@@ -48,19 +48,27 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-let playerName = "플레이어"; // 기본값
-let chatHistory = [];
-let boxOpened = false;
-let boxDeclined = false;
-let keyFound = false;
-let secondRoomEntered = false;
-let helpResponded = false;
-let shelfChecked = false;
-let noteFound = false;
-let boxBlocked = false;
-let exploredAreas = false;  // 처음 주변 탐색 여부
-let boxAreaChecked = false; // 상자쪽 확인 여부
-let shelfAreaChecked = false; // 선반쪽 확인 여부 
+// 게임 상태 초기화 함수
+function initializeGameState() {
+  return {
+    playerName: "플레이어",
+    chatHistory: [],
+    boxOpened: false,
+    boxDeclined: false,
+    keyFound: false,
+    secondRoomEntered: false,
+    helpResponded: false,
+    shelfChecked: false,
+    noteFound: false,
+    boxBlocked: false,
+    exploredAreas: false,
+    boxAreaChecked: false,
+    shelfAreaChecked: false
+  };
+}
+
+// 게임 상태
+let gameState = initializeGameState();
 
 // 플레이어 이름 관련 엔드포인트들
 app.get('/get-player-name', (req, res) => {
@@ -350,28 +358,30 @@ app.post('/chat', async (req, res) => {
       return res.status(400).json({ error: '메시지가 제공되지 않았습니다.' });
     }
 
-    // 🔥 리셋 기능 - 모든 상태 완전 초기화
+    console.log(`[Server1] 받은 메시지: "${userMessage}"`);
+
+    // 리셋 기능
     if (userMessage === 'reset') {
       console.log('[Server1] 🔄 게임 리셋 실행');
-      gameState = initializeGameState(); // 모든 상태 초기화
+      gameState = initializeGameState();
       console.log('[Server1] ✅ 게임 상태 완전 초기화 완료');
       
       return res.json({ 
         message: '게임이 초기화되었습니다. 새로 시작해보세요!', 
         narration: '게임이 초기화되었습니다.',
         image: 'images/neutral.png',
-        reset: true // 클라이언트에서 UI 초기화하도록 신호
+        reset: true
       });
     }
 
-    // 도움 요청에 긍정적 응답 (첫 번째만)
+    // 도움 요청에 긍정적 응답
     if (!gameState.helpResponded && (
       userMessage.includes('도와') ||
       userMessage.includes('그래') ||
       userMessage.includes('알겠어') ||
       userMessage.includes('ㅇㅋ') ||
       userMessage.includes('ㅇㅇ') ||
-      userMessage.includes('yes')
+      userMessage.toLowerCase().includes('yes')
     )) {
       gameState.helpResponded = true;
       return res.json({
@@ -381,17 +391,15 @@ app.post('/chat', async (req, res) => {
     }
   
     // 거부 반응
-    if (userMessage.includes('싫') || userMessage.includes('왜?') || 
-        userMessage.includes('ㄴㄴ') || userMessage.includes('no') ||
-        userMessage.includes('시발') || userMessage.includes('좆') || 
-        userMessage.includes('병신')) {
+    if (userMessage.includes('싫') || userMessage.includes('왜') || 
+        userMessage.includes('ㄴㄴ') || userMessage.toLowerCase().includes('no')) {
       return res.json({ 
         message: `${gameState.playerName}님과 대화를 이어갈 수 없다는 게 슬프네요.`, 
         image: 'images/ang.gif'
       });
     }
 
-    // 🔥 새로운 로직: 주변 탐색 시 첫 번째 분기점 제공
+    // 주변 탐색 시 첫 번째 분기점 제공
     if (!gameState.exploredAreas && (
         (userMessage.includes('주변') && (userMessage.includes('뭐') || userMessage.includes('무엇'))) || 
         userMessage.includes('뭔가 있어') || userMessage.includes('뭔가 보여') ||
@@ -408,7 +416,7 @@ app.post('/chat', async (req, res) => {
       });
     }
 
-    // 🔥 상자 쪽 확인 선택
+    // 상자 쪽 확인 선택
     if (userMessage === 'checkBoxArea') {
       gameState.boxAreaChecked = true;
       
@@ -416,9 +424,9 @@ app.post('/chat', async (req, res) => {
         return res.json({
           message: `${gameState.playerName}님, 상자를 다시는 열지 않기로 했잖아요... 다른 곳을 살펴볼까요?`,
           image: 'images/sad.gif',
-          options: [
+          options: !gameState.shelfAreaChecked ? [
             { text: '선반 쪽을 확인한다', action: 'checkShelfArea' }
-          ]
+          ] : []
         });
       }
       
@@ -426,9 +434,9 @@ app.post('/chat', async (req, res) => {
         return res.json({
           message: `${gameState.playerName}님, 이미 상자를 확인했어요. 쪽지도 읽었구요. 다른 곳을 살펴볼까요?`,
           image: 'images/neutral.png',
-          options: [
+          options: !gameState.shelfAreaChecked ? [
             { text: '선반 쪽을 확인한다', action: 'checkShelfArea' }
-          ]
+          ] : []
         });
       }
       
@@ -442,7 +450,7 @@ app.post('/chat', async (req, res) => {
       });
     }
 
-    // 🔥 선반 쪽 확인 선택
+    // 선반 쪽 확인 선택
     if (userMessage === 'checkShelfArea') {
       gameState.shelfAreaChecked = true;
       gameState.shelfChecked = true;
@@ -461,49 +469,45 @@ app.post('/chat', async (req, res) => {
       }
     }
 
-    // 🔥 상자 열기 선택
+    // 상자 열기 선택
     if (userMessage === 'openBox') {
       if (!gameState.boxOpened) {
         gameState.boxOpened = true;
         gameState.boxDeclined = false;
         gameState.noteFound = true;
         
-        // 선반쪽을 아직 확인하지 않았다면 선택지 제공
+        const responseData = {
+          message: `${gameState.playerName}님, 상자를 열었어요... 빵과 물이 들어있어요. 그리고... 쪽지도 있네요. 쪽지에는 '맞아'라고 인정했을 때, 우린 모든 진실을 알 수 있을 거예요. 라고 쓰여 있어요.`,
+          image: 'images/hap.gif'
+        };
+
         if (!gameState.shelfAreaChecked) {
-          return res.json({
-            message: [
-              { type: 'steve', text: `${gameState.playerName}님, 상자를 열었어요... 빵과 물이 들어있어요. 그리고... 쪽지도 있네요.` },
-              { type: 'narration', text: "쪽지에는 '맞아'라고 인정했을 때, 우린 모든 진실을 알 수 있을 거예요. 라고 쓰여 있습니다." }
-            ],
-            image: 'images/hap.gif',
-            options: [
-              { text: '선반 쪽을 확인한다', action: 'checkShelfArea' }
-            ]
-          });
-        } else {
-          return res.json({
-            message: [
-              { type: 'steve', text: `${gameState.playerName}님, 상자를 열었어요... 빵과 물이 들어있어요. 그리고... 쪽지도 있네요.` },
-              { type: 'narration', text: "쪽지에는 '맞아'라고 인정했을 때, 우린 모든 진실을 알 수 있을 거예요. 라고 쓰여 있습니다." }
-            ],
-            image: 'images/hap.gif'
-          });
-        }
-      } else {
-        return res.json({
-          message: `${gameState.playerName}님, 이미 확인했어요. 다른 곳을 살펴볼까요?`,
-          image: 'images/neutral.png',
-          options: !gameState.shelfAreaChecked ? [
+          responseData.options = [
             { text: '선반 쪽을 확인한다', action: 'checkShelfArea' }
-          ] : []
-        });
+          ];
+        }
+
+        return res.json(responseData);
+      } else {
+        const responseData = {
+          message: `${gameState.playerName}님, 이미 확인했어요. 다른 곳을 살펴볼까요?`,
+          image: 'images/neutral.png'
+        };
+
+        if (!gameState.shelfAreaChecked) {
+          responseData.options = [
+            { text: '선반 쪽을 확인한다', action: 'checkShelfArea' }
+          ];
+        }
+
+        return res.json(responseData);
       }
     }
 
-    // 🔥 상자 열지 않기 선택
+    // 상자 열지 않기 선택
     if (userMessage === 'dontOpenBox') {
       gameState.boxDeclined = true;
-      gameState.boxBlocked = true; // 앞으로 상자 접근을 막음
+      gameState.boxBlocked = true;
       
       return res.json({
         message: `${gameState.playerName}님, 알겠어요. 그럼 선반 쪽으로 살펴볼까요?`,
@@ -514,7 +518,7 @@ app.post('/chat', async (req, res) => {
       });
     }
 
-    // 🔥 상자 재언급 시 차단 (boxBlocked가 true일 때만)
+    // 상자 재언급 시 차단
     if (gameState.boxBlocked && userMessage.includes('상자')) {
       return res.json({
         message: `${gameState.playerName}님, 상자를 다시는 열지 않기로 했잖아요... 다른 걸 살펴봐요.`,
@@ -523,70 +527,73 @@ app.post('/chat', async (req, res) => {
     }
 
     // 문 열기 로직
-    if (userMessage.includes('열쇠') && userMessage.includes('문') && userMessage.includes('열자')) {
+    if ((userMessage.includes('열쇠') && userMessage.includes('문')) || 
+        userMessage.includes('열쇠로 문을 열어') ||
+        (userMessage.includes('문') && userMessage.includes('열') && gameState.keyFound)) {
+      
       if (gameState.keyFound) {
         gameState.secondRoomEntered = true;
         return res.json({
-          "message": [
-            { "type": "narration", "text": "문이 열렸습니다. 다음 방으로 이동합니다." },
-            { "type": "user", "text": `스티브: ${gameState.playerName}님, 문이 열렸어요... 다음 방에 도착했어요..!` }
-          ],
-          "image": "images/hap.png",
-          "clear": true
+          message: `${gameState.playerName}님, 문이 열린 것 같아요. 한 번 넘어가볼게요... 탈출이 눈 앞이네요!`,
+          image: "images/hap.png",
+          clear: true
+        });
+      } else {
+        return res.json({
+          message: `${gameState.playerName}님, 문이 잠겨있어요... 열쇠가 필요할 것 같아요.`,
+          image: "images/sad.gif"
         });
       }
     }
 
-    if (userMessage.includes('문') && userMessage.includes('열')) {
-      if (gameState.keyFound) {
-        gameState.secondRoomEntered = true;
-        return res.json({
-          "message": [
-            { "type": "narration", "text": "문이 열렸습니다. 다음 방으로 이동합니다." },
-            { "type": "user", "text": `스티브: ${gameState.playerName}님, 문이 열렸어요... 다음 방에 도착했어요..!` }
-          ],
-          "image": "images/hap.png",
-          "clear": true
-        });
-      }
-    }
+    // OpenAI API 호출
+    gameState.chatHistory.push({ role: 'user', content: userMessage });
 
-    chatHistory.push({ role: 'user', content: userMessage });
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: createContext() },
+        ...gameState.chatHistory.slice(-10),
+      ],
+    });
 
-    try {
-      const completion = await openai.chat.completions.create({
-        model: 'gpt-4o',
-        messages: [
-          { role: 'system', content: createContext() },
-          ...chatHistory.slice(-10),
-        ],
-      });
+    const botResponse = completion.choices[0].message.content;
+    gameState.chatHistory.push({ role: 'assistant', content: botResponse });
+    
+    return res.json({ 
+      message: botResponse,
+      image: 'images/neutral.png'
+    });
 
-      const botResponse = completion.choices[0].message.content;
-      chatHistory.push({ role: 'assistant', content: botResponse });
-      return res.json({ message: botResponse });
-    } catch (error) {
-      console.error('OpenAI API 호출 오류:', error);
-      return res.status(500).json({ message: '서버 오류가 발생했습니다.' });
-    }
   } catch (error) {
     console.error('서버 오류:', error);
-    return res.status(500).json({ message: '서버 오류가 발생했습니다.' });
+    console.error('Error stack:', error.stack);
+    return res.status(500).json({ 
+      message: '서버 오류가 발생했습니다.',
+      error: error.message 
+    });
   }
 });
 
-// Render는 PORT 환경 변수를 제공합니다
+// 에러 핸들링 미들웨어
+app.use((error, req, res, next) => {
+  console.error('Unhandled error:', error);
+  res.status(500).json({ 
+    message: '서버 내부 오류가 발생했습니다.',
+    error: process.env.NODE_ENV === 'development' ? error.message : undefined
+  });
+});
+
 const PORT = process.env.PORT || 5001;
 
 const start = () => {
-  app.listen(PORT, '0.0.0.0', async () => {
+  app.listen(PORT, '0.0.0.0', () => {
     console.log(`✅ Chapter 2 서버 실행 중: http://0.0.0.0:${PORT}`);
-    
-    // 서버 시작시 다른 서버에서 이름 가져오기 시도 (Render에서는 주석 처리)
-    // await fetchPlayerNameFromOtherServers();
   });
 };
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   start();
 }
+
+export default app;
