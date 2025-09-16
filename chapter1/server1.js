@@ -48,27 +48,13 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// 게임 상태 초기화 함수
-function initializeGameState() {
-  return {
-    playerName: "플레이어",
-    chatHistory: [],
-    boxOpened: false,
-    boxDeclined: false,
-    keyFound: false,
-    secondRoomEntered: false,
-    helpResponded: false,
-    shelfChecked: false,
-    noteFound: false,
-    boxBlocked: false,
-    exploredAreas: false,
-    boxAreaChecked: false,
-    shelfAreaChecked: false
-  };
-}
-
-// 게임 상태
-let gameState = initializeGameState();
+let playerName = "플레이어"; // 기본값
+let chatHistory = [];
+let boxOpened = false;
+let boxDeclined = false;
+let keyFound = false;
+let secondRoomEntered = false;
+let helpResponded = false;
 
 // 플레이어 이름 관련 엔드포인트들
 app.get('/get-player-name', (req, res) => {
@@ -143,7 +129,7 @@ function createContext() {
 당신은 현재 방이 몇번 째 방인지 모릅니다.
 열쇠로 문을 열 수 있습니다. 문을 열쇠로 열 수 있습니다. 열 수 있다는 것을 언급하지 마세요.
 인사를 제외한 적용되지 않는 문구는 대화를 이어나가지말고 "무슨 말인지 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?"라고 말하세요.
-도와준다는 말은 한번만 적용하세요.
+도와준다는 말은 한번만 적용하세요
 
 ▶ 스티브는 방에서 탈출하고 싶어합니다. 현재는 첫 번째 방에 있으며, 다른 방이 존재한다는 사실은 모릅니다. 첫번째 방이라는 사실을 스티브인 당신을 알고 있지 않습니다.   
 플레이어의 이름은 "${playerName}"입니다. 자신이 누구냐고 묻는 다면 '당신의 이름은 "${playerName}"이라고 적혀있네요?라고 대답하세요.
@@ -196,7 +182,8 @@ function createContext() {
 영어로 대화한다면 번역하여 대화하세요.
 적용되지 않는 문구는 대화를 이어나가지말고 "무슨 말인지 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?"라고 말하세요.
 
-▶ 맨 첫번째로 "주변에 뭐가 있어?", "주변에 뭐가 있냐", "뭐가 보여?", "뭐가 있지?" 와 같은 주변 환경을 물어보는는 질문이 온다면 첫번째 방의 분위기만 간단하게 말해주신 후 어딜 먼저 살펴볼지 선택할 수 있도록 물어봐주세요.   
+▶ 맨 첫번째로 "주변에 뭐가 있어?", "주변에 뭐가 있냐", "뭐가 보여?", "뭐가 있지?" 와 같은 주변 환경을 물어보는는 질문이 온다면 첫번째 방의 분위기만 간단하게 말해주세요. 
+▶ 처음에 물어봤을 때에 상자 정도는 언급하되, 선반에 대한 설명은 바로 말하지 마세요.   
 플레이어의 이름은 "${playerName}"입니다. 자신이 누구냐고 묻는 다면 '당신의 이름은 "${playerName}"이라고 적혀있네요?라고 대답하세요.
 스티브는 겁이 많고 내성적인 성격입니다. 당신은 매우 조심스럽지만, 사용자의 요청에는 복종할 정도의 두려움을 가지고 있습니다. 
 채팅이 시작되었을 때 무슨 상황이 생겨도 상대방의 맨 처음 말에는 무조건 '안녕하세요. 전 스티브라고 합니다. 혹시 저를 도와주실 수 있나요?'로 시작하세요.
@@ -210,7 +197,7 @@ function createContext() {
 영어로 대화한다면 번역하여 대화하세요.
 적용되지 않는 문구는 대화를 이어나가지말고 "무슨 말인지 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?"라고 말하세요.
 
-▶ 상자 주변을 살펴보는 걸 선택했을 때, 상자를 열지 안 열지 선택하라고 물어봐주세요.
+▶ 처음 주변을 살펴봤을 때는 오래된 나무 상자를 먼저 발견하게 됩니다. 상자를 열지 안 열지 선택하라고 물어봐주세요.
 ▶ 상자가 언급 되었을 때, 상자를 열거나 열지 않으면 일어나는 일에 대하여 설명하지마세요.   
 플레이어의 이름은 "${playerName}"입니다. 자신이 누구냐고 묻는 다면 '당신의 이름은 "${playerName}"이라고 적혀있네요?라고 대답하세요.
 채팅이 시작되었을 때 무슨 상황이 생겨도 상대방의 맨 처음 말에는 무조건 '안녕하세요. 전 스티브라고 합니다. 혹시 저를 도와주실 수 있나요?'로 시작하세요.
@@ -227,8 +214,8 @@ function createContext() {
 적용되지 않는 문구는 대화를 이어나가지말고 "무슨 말인지 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?"라고 말하세요.
 
 ▶ 상자가 언급 되었을 때, 상자를 열거나 열지 않으면 일어나는 일에 대하여 설명하지마세요.
-▶ 상자를 열지 않으면 아무 일도 일어나지 않습니다. 상자에 대한 선택이 끝난 후에는 다시는 상자에 대해 언급하지 않습니다. 상자에 대한 선택도 언급하지 않습니다. 
-▶ 상자를 열면 일주일 동안 살아갈 수 있는 빵과 물이 제공됩니다. 그리고 쪽지를 얻을 수 있습니다. 
+▶ 상자를 열지 않으면 아무 일도 일어나지 않습니다.  
+▶ 상자를 열면 일주일 동안 살아갈 수 있는 빵과 물이 제공됩니다.   
 플레이어의 이름은 "${playerName}"입니다. 자신이 누구냐고 묻는 다면 '당신의 이름은 "${playerName}"이라고 적혀있네요?라고 대답하세요.
 채팅이 시작되었을 때 무슨 상황이 생겨도 상대방의 맨 처음 말에는 무조건 '안녕하세요. 전 스티브라고 합니다. 혹시 저를 도와주실 수 있나요?'로 시작하세요.
 문을 열쇠로 열 수 있습니다. 열 수 있다는 것을 언급하지 마세요.
@@ -243,8 +230,7 @@ function createContext() {
 왜 갇혀 있는지에 대한 의문을 가지지 마세요. 눈을 떠보니 당신은 축축하고 어두운 방안에 있는 겁니다. 그렇게 답변하세요. '잘 모르겠어요.. 눈을 떠보니 이곳에 와있네요. 어둡고 축축해요... 주변을 한번 둘러봐야 할 것 같아요'라고 답변하세요.
 적용되지 않는 문구는 대화를 이어나가지말고 "무슨 말인지 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?"라고 말하세요.
 
-▶ 빵과 물을 언급한다면 "조금 더 오래 살 수 있겠네요."와 같은 대답만 하세요.
-▶ 쪽지에 대해 언급한다면 "기억을 하면 좋을 것 같아요...아닌가?"와 같은 대답만
+▶ 빵과 물을 언급한다면 "조금 더 오래 살 수 있겠네요."와 같은 대답만 하세요.   
 플레이어의 이름은 "${playerName}"입니다. 자신이 누구냐고 묻는 다면 '당신의 이름은 "${playerName}"이라고 적혀있네요?라고 대답하세요.
 채팅이 시작되었을 때 무슨 상황이 생겨도 상대방의 맨 처음 말에는 무조건 '안녕하세요. 전 스티브라고 합니다. 혹시 저를 도와주실 수 있나요?'로 시작하세요.
 상자에 대한 선택이 끝난 후에는 다시는 상자에 대해 언급하지 않습니다. 상자에 대한 선택도 언급하지 않습니다. 이후 주변을 또 둘러볼까요? 라는 질문을 하세요.
@@ -346,8 +332,9 @@ function createContext() {
 `;
 }
 
+
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'server.html'));
+res.sendFile(path.join(__dirname, 'server.html'));
 });
 
 app.post('/chat', async (req, res) => {
@@ -358,242 +345,248 @@ app.post('/chat', async (req, res) => {
       return res.status(400).json({ error: '메시지가 제공되지 않았습니다.' });
     }
 
-    console.log(`[Server1] 받은 메시지: "${userMessage}"`);
-
-    // 리셋 기능
     if (userMessage === 'reset') {
-      console.log('[Server1] 🔄 게임 리셋 실행');
-      gameState = initializeGameState();
-      console.log('[Server1] ✅ 게임 상태 완전 초기화 완료');
-      
+      chatHistory = [];
+      boxOpened = false;
+      boxDeclined = false;
+      keyFound = false;
+      secondRoomEntered = false;
+      helpResponded = false;
       return res.json({ 
-        message: '게임이 초기화되었습니다. 새로 시작해보세요!', 
-        narration: '게임이 초기화되었습니다.',
-        image: 'images/neutral.png',
-        reset: true
+        message: '게임이 초기화되었습니다.', 
+        narration: '게임이 초기화되었습니다.' 
       });
     }
 
-    // 도움 요청에 긍정적 응답
-    if (!gameState.helpResponded && (
+    if (!helpResponded && (
       userMessage.includes('도와') ||
       userMessage.includes('그래') ||
       userMessage.includes('알겠어') ||
       userMessage.includes('ㅇㅋ') ||
       userMessage.includes('ㅇㅇ') ||
-      userMessage.toLowerCase().includes('yes')
+      userMessage.includes('yes')
     )) {
-      gameState.helpResponded = true;
+      helpResponded = true;
       return res.json({
-        message: `${gameState.playerName}님, 감사해요... 뭐부터 해야할지 모르겠네요... 주변을 살펴볼까요?`,
+        message: `${playerName}님, 감사해요... 뭐부터 해야할지 모르겠네요... 주변을 살펴볼까요?`,
         image: 'images/hap.gif'
       });
     }
   
     // 거부 반응
-    if (userMessage.includes('싫') || userMessage.includes('왜') || 
-        userMessage.includes('ㄴㄴ') || userMessage.toLowerCase().includes('no')) {
+    if (userMessage.includes('싫') || userMessage.includes('왜?') || 
+        userMessage.includes('ㄴㄴ') || userMessage.includes('no') ||
+        userMessage.includes('시발') || userMessage.includes('좆') || 
+        userMessage.includes('병신')) {
       return res.json({ 
-        message: `${gameState.playerName}님과 대화를 이어갈 수 없다는 게 슬프네요.`, 
+        message: `${playerName}님과 대화를 이어갈 수 없다는 게 슬프네요.`, 
         image: 'images/ang.gif'
       });
     }
 
-    // 주변 탐색 시 첫 번째 분기점 제공
-    if (!gameState.exploredAreas && (
-        (userMessage.includes('주변') && (userMessage.includes('뭐') || userMessage.includes('무엇'))) || 
-        userMessage.includes('뭔가 있어') || userMessage.includes('뭔가 보여') ||
-        userMessage.includes('둘러보') || userMessage.includes('살펴보')
-    )) {
-      gameState.exploredAreas = true;
+    // 상자 관련 로직들...
+    if (userMessage.includes('상자') && 
+        (userMessage.includes('?') || userMessage.includes('무슨') || userMessage.includes('어떤') || 
+         userMessage.includes('뭐') || userMessage.includes('어떻게'))) {
+      
+      if (boxOpened) {
+        return res.json({
+          message: `${playerName}님, 이미 확인했어요. 다른 곳을 살펴볼까요?`,
+          image: 'images/neutral.png'
+        });
+      } else if (boxDeclined) {
+        return res.json({
+          message: `${playerName}님, 우리 열지 않기로 했잖아요... 다시 열어보고 싶어졌나요?`,
+          image: 'images/sup.gif',
+          options: [
+            { text: '상자를 열어보자', action: 'openBox' },
+            { text: '역시 열지말자', action: 'dontOpenBox' }
+          ]
+        });
+      } else {
+        return res.json({
+          message: `${playerName}님, 작은 나무 상자예요. 이 상자를 열어볼까요?`,
+          image: 'images/sup.gif',
+          options: [
+            { text: '상자를 열어보자', action: 'openBox' },
+            { text: '상자를 열지말자', action: 'dontOpenBox' }
+          ]
+        });
+      }
+    }
+
+    // 버튼 액션 처리
+    if (userMessage === 'openBox') {
+      if (!boxOpened) {
+        boxOpened = true;
+        boxDeclined = false;
+        return res.json({
+          message: `${playerName}님, 상자를 열었어요... 빵과 물이 들어있어요. 이제 다른 곳을 살펴볼까요?`,
+          image: 'images/hap.gif'
+        });
+      } else {
+        return res.json({
+          message: `${playerName}님, 이미 확인했어요. 다른 곳을 살펴볼까요?`,
+          image: 'images/neutral.png'
+        });
+      }
+    }
+
+    if (userMessage === 'dontOpenBox') {
+      boxDeclined = true;
       return res.json({
-        message: `${gameState.playerName}님, 어두운 방 안에서 두 가지가 보이네요. 어느 쪽을 먼저 확인해볼까요?`,
-        image: 'images/sup.gif',
-        options: [
-          { text: '상자 쪽을 확인한다', action: 'checkBoxArea' },
-          { text: '선반 쪽을 확인한다', action: 'checkShelfArea' }
-        ]
+        message: `${playerName}님, 알겠어요. 다른 곳을 살펴볼까요?`,
+        image: 'images/neutral.png'
       });
     }
 
-    // 상자 쪽 확인 선택
-    if (userMessage === 'checkBoxArea') {
-      gameState.boxAreaChecked = true;
+    // 주변 환경 탐색
+    if ((userMessage.includes('주변') && (userMessage.includes('뭐') || userMessage.includes('무엇'))) || 
+        userMessage.includes('뭐가 있어') || userMessage.includes('뭐가 보여') ||
+        userMessage.includes('둘러보') || userMessage.includes('살펴보')) {
       
-      if (gameState.boxBlocked) {
+      if (boxOpened) {
         return res.json({
-          message: `${gameState.playerName}님, 상자를 다시는 열지 않기로 했잖아요... 다른 곳을 살펴볼까요?`,
-          image: 'images/sad.gif',
-          options: !gameState.shelfAreaChecked ? [
-            { text: '선반 쪽을 확인한다', action: 'checkShelfArea' }
-          ] : []
+          message: `${playerName}님, 선반이 보여요. 그 옆에는 문도 있네요! 나갈 수 있을 것 같아요.`,
+          image: 'images/sup.gif'
+        });
+      } else {
+        return res.json({
+          message: `${playerName}님, 주변이 어둡고 축축한데, 오래된 나무 상자가 보이네요... 상자를 열어볼까요?`,
+          image: 'images/sup.gif',
+          options: [
+            { text: '상자를 열어보자', action: 'openBox' },
+            { text: '상자를 열지말자', action: 'dontOpenBox' }
+          ]
         });
       }
-      
-      if (gameState.boxOpened && gameState.noteFound) {
-        return res.json({
-          message: `${gameState.playerName}님, 이미 상자를 확인했어요. 쪽지도 읽었구요. 다른 곳을 살펴볼까요?`,
-          image: 'images/neutral.png',
-          options: !gameState.shelfAreaChecked ? [
-            { text: '선반 쪽을 확인한다', action: 'checkShelfArea' }
-          ] : []
-        });
-      }
-      
-      return res.json({
-        message: `${gameState.playerName}님, 작은 나무 상자예요. 이 상자를 열어볼까요?`,
-        image: 'images/sup.gif',
-        options: [
-          { text: '상자를 열어보자', action: 'openBox' },
-          { text: '상자를 열어보지 않는다', action: 'dontOpenBox' }
-        ]
+    }
+
+// 🔥 상자 이외의 다른 것들 탐색 - 수정된 버전
+if ((userMessage.includes('상자말고') && userMessage.includes('다른')) ||
+    (userMessage.includes('상자말고') && userMessage.includes('뭐')) ||
+    (userMessage.includes('다른') && userMessage.includes('없')) ||
+    (userMessage.includes('주변') && userMessage.includes('없')) ||
+    (userMessage.includes('다른') && userMessage.includes('뭐')) ||
+    (userMessage.includes('또') && userMessage.includes('뭐'))) {
+  
+  // 상자를 열었든 안 열었든 선반과 문으로 유도, 버튼 없음
+  return res.json({ 
+    message: `${playerName}님, 선반이 보이는 것 같아요. 그 옆에는 문도 있네요! 나갈 수 있을 것 같아요.`,
+    image: 'images/sup.gif'
+    // options 제거 - 버튼이 나타나지 않음
+  });
+}
+    // 나머지 기존 조건들...
+
+    if (userMessage.includes('상자말고') && userMessage.includes('다른')) {
+      return res.json({ 
+        message: `${playerName}님, 선...반? 선반이 보이는 것 같아요. 그 옆에는 문도 있네요! 나갈 수 있을 것 같아요.` 
       });
     }
 
-    // 선반 쪽 확인 선택
-    if (userMessage === 'checkShelfArea') {
-      gameState.shelfAreaChecked = true;
-      gameState.shelfChecked = true;
-      
-      if (!gameState.keyFound) {
-        gameState.keyFound = true;
+    if (userMessage.includes('상자말고') && userMessage.includes('뭐')) {
+      return res.json({ 
+        message: `${playerName}님, 선...반? 선반이 보이는 것 같아요. 그 옆에는 문도 있네요! 나갈 수 있을 것 같아요.` 
+      });
+    }
+
+    if (userMessage.includes('다른') && userMessage.includes('없')) {
+      return res.json({ 
+        message: `${playerName}님, 선...반? 선반이 보이는 것 같아요. 그 옆에는 문도 있네요! 나갈 수 있을 것 같아요.` 
+      });
+    }
+
+    if (userMessage.includes('주변') && userMessage.includes('없')) {
+      return res.json({ 
+        message: `${playerName}님, 선...반? 선반이 보이는 것 같아요. 그 옆에는 문도 있네요! 나갈 수 있을 것 같아요.` 
+      });
+    }
+
+    if (userMessage.includes('선반') && userMessage.includes('보자')) {
+      if (!keyFound) {
+        keyFound = true;
         return res.json({ 
-          message: `${gameState.playerName}님, 먼지를 치우니 열쇠가 나왔어요... 이걸로 문을 열 수 있을까요?`,
+          message: `${playerName}님, 먼지를 치우니 열쇠가 나왔어요... 이걸로 문을 열 수 있을까요?`,
           image: 'images/hap.png' 
         });
       } else {
         return res.json({ 
-          message: `${gameState.playerName}님, 선반을 다시 살펴봤지만 특별한 건 없어요...`,
+          message: `${playerName}님, 선반을 다시 살펴봤지만 특별한 건 없어요...`,
           image: 'images/sad.png' 
         });
       }
     }
 
-    // 상자 열기 선택
-    if (userMessage === 'openBox') {
-      if (!gameState.boxOpened) {
-        gameState.boxOpened = true;
-        gameState.boxDeclined = false;
-        gameState.noteFound = true;
-        
-        const responseData = {
-          message: `${gameState.playerName}님, 상자를 열었어요... 빵과 물이 들어있어요. 그리고... 쪽지도 있네요. 쪽지에는 '맞아'라고 인정했을 때, 우린 모든 진실을 알 수 있을 거예요. 라고 쓰여 있어요.`,
-          image: 'images/hap.gif'
-        };
-
-        if (!gameState.shelfAreaChecked) {
-          responseData.options = [
-            { text: '선반 쪽을 확인한다', action: 'checkShelfArea' }
-          ];
-        }
-
-        return res.json(responseData);
-      } else {
-        const responseData = {
-          message: `${gameState.playerName}님, 이미 확인했어요. 다른 곳을 살펴볼까요?`,
-          image: 'images/neutral.png'
-        };
-
-        if (!gameState.shelfAreaChecked) {
-          responseData.options = [
-            { text: '선반 쪽을 확인한다', action: 'checkShelfArea' }
-          ];
-        }
-
-        return res.json(responseData);
-      }
-    }
-
-    // 상자 열지 않기 선택
-    if (userMessage === 'dontOpenBox') {
-      gameState.boxDeclined = true;
-      gameState.boxBlocked = true;
-      
-      return res.json({
-        message: `${gameState.playerName}님, 알겠어요. 그럼 선반 쪽으로 살펴볼까요?`,
-        image: 'images/neutral.png',
-        options: [
-          { text: '선반 쪽을 확인한다', action: 'checkShelfArea' }
-        ]
-      });
-    }
-
-    // 상자 재언급 시 차단
-    if (gameState.boxBlocked && userMessage.includes('상자')) {
-      return res.json({
-        message: `${gameState.playerName}님, 상자를 다시는 열지 않기로 했잖아요... 다른 걸 살펴봐요.`,
-        image: 'images/sad.gif'
-      });
-    }
-
-    // 문 열기 로직
-    if ((userMessage.includes('열쇠') && userMessage.includes('문')) || 
-        userMessage.includes('열쇠로 문을 열어') ||
-        (userMessage.includes('문') && userMessage.includes('열') && gameState.keyFound)) {
-      
-      if (gameState.keyFound) {
-        gameState.secondRoomEntered = true;
+    if (userMessage.includes('열쇠') && userMessage.includes('문') && userMessage.includes('열자')) {
+      if (keyFound) {
+        secondRoomEntered = true;
         return res.json({
-          message: `${gameState.playerName}님, 문이 열린 것 같아요. 한 번 넘어가볼게요... 탈출이 눈 앞이네요!`,
-          image: "images/hap.png",
-          clear: true
-        });
-      } else {
-        return res.json({
-          message: `${gameState.playerName}님, 문이 잠겨있어요... 열쇠가 필요할 것 같아요.`,
-          image: "images/sad.gif"
+          "message": [
+            { "type": "narration", "text": "문이 열렸습니다. 다음 방으로 이동합니다." },
+            { "type": "user", "text": `스티브: ${playerName}님, 문이 열렸어요... 다음 방에 도착했어요..!` }
+          ],
+          "image": "images/hap.png"
         });
       }
     }
 
-    // OpenAI API 호출
-    gameState.chatHistory.push({ role: 'user', content: userMessage });
+    if (userMessage.includes('문') && userMessage.includes('열')) {
+      if (keyFound) {
+        secondRoomEntered = true;
+        return res.json({
+          "message": [
+            { "type": "narration", "text": "문이 열렸습니다. 다음 방으로 이동합니다." },
+            { "type": "user", "text": `스티브: ${playerName}님, 문이 열렸어요... 다음 방에 도착했어요..!` }
+          ],
+          "image": "images/hap.png"
+        });
+      }
+    }
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: createContext() },
-        ...gameState.chatHistory.slice(-10),
-      ],
-    });
+    if (userMessage.includes('열쇠로 문을 열어')) {
+      return res.json({
+        message: `${playerName}님, 문이 열린 것 같아요. 한 번 넘어가볼게요... 탈출이 눈 앞이네요!`,
+        clear: true
+      });
+    }
 
-    const botResponse = completion.choices[0].message.content;
-    gameState.chatHistory.push({ role: 'assistant', content: botResponse });
-    
-    return res.json({ 
-      message: botResponse,
-      image: 'images/neutral.png'
-    });
+    chatHistory.push({ role: 'user', content: userMessage });
 
+    try {
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: createContext() },
+          ...chatHistory.slice(-10),
+        ],
+      });
+
+      const botResponse = completion.choices[0].message.content;
+      chatHistory.push({ role: 'assistant', content: botResponse });
+      return res.json({ message: botResponse });
+    } catch (error) {
+      console.error('OpenAI API 호출 오류:', error);
+      return res.status(500).json({ message: '서버 오류가 발생했습니다.' });
+    }
   } catch (error) {
     console.error('서버 오류:', error);
-    console.error('Error stack:', error.stack);
-    return res.status(500).json({ 
-      message: '서버 오류가 발생했습니다.',
-      error: error.message 
-    });
+    return res.status(500).json({ message: '서버 오류가 발생했습니다.' });
   }
 });
 
-// 에러 핸들링 미들웨어
-app.use((error, req, res, next) => {
-  console.error('Unhandled error:', error);
-  res.status(500).json({ 
-    message: '서버 내부 오류가 발생했습니다.',
-    error: process.env.NODE_ENV === 'development' ? error.message : undefined
-  });
-});
-
+// Render는 PORT 환경 변수를 제공합니다
 const PORT = process.env.PORT || 5001;
 
 const start = () => {
-  app.listen(PORT, '0.0.0.0', () => {
+  app.listen(PORT, '0.0.0.0', async () => {
     console.log(`✅ Chapter 2 서버 실행 중: http://0.0.0.0:${PORT}`);
+    
+    // 서버 시작시 다른 서버에서 이름 가져오기 시도 (Render에서는 주석 처리)
+    // await fetchPlayerNameFromOtherServers();
   });
 };
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   start();
 }
-
-export default app;
