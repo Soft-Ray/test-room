@@ -57,7 +57,10 @@ let secondRoomEntered = false;
 let helpResponded = false;
 let shelfChecked = false;
 let noteFound = false;
-let boxBlocked = false;  
+let boxBlocked = false;
+let exploredAreas = false;  // 처음 주변 탐색 여부
+let boxAreaChecked = false; // 상자쪽 확인 여부
+let shelfAreaChecked = false; // 선반쪽 확인 여부 
 
 // 플레이어 이름 관련 엔드포인트들
 app.get('/get-player-name', (req, res) => {
@@ -348,6 +351,7 @@ app.post('/chat', async (req, res) => {
       return res.status(400).json({ error: '메시지가 제공되지 않았습니다.' });
     }
 
+    // 리셋 기능 - 모든 상태 초기화
     if (userMessage === 'reset') {
       chatHistory = [];
       boxOpened = false;
@@ -358,12 +362,16 @@ app.post('/chat', async (req, res) => {
       shelfChecked = false;
       noteFound = false;
       boxBlocked = false;
+      exploredAreas = false;
+      boxAreaChecked = false;
+      shelfAreaChecked = false;
       return res.json({ 
         message: '게임이 초기화되었습니다.', 
         narration: '게임이 초기화되었습니다.' 
       });
     }
 
+    // 도움 요청에 긍정적 응답
     if (!helpResponded && (
       userMessage.includes('도와') ||
       userMessage.includes('그래') ||
@@ -390,29 +398,33 @@ app.post('/chat', async (req, res) => {
       });
     }
 
-    // 🔥 새로운 로직: 주변 탐색 시 첫 번째 선택지 제공
-    if ((userMessage.includes('주변') && (userMessage.includes('뭐') || userMessage.includes('무엇'))) || 
+    // 🔥 새로운 로직: 주변 탐색 시 첫 번째 분기점 제공
+    if (!exploredAreas && (
+        (userMessage.includes('주변') && (userMessage.includes('뭐') || userMessage.includes('무엇'))) || 
         userMessage.includes('뭔가 있어') || userMessage.includes('뭔가 보여') ||
-        userMessage.includes('둘러보') || userMessage.includes('살펴보')) {
-      
+        userMessage.includes('둘러보') || userMessage.includes('살펴보')
+    )) {
+      exploredAreas = true;
       return res.json({
-        message: `${playerName}님, 어둠운 방 안에서 두 가지가 보이네요. 어느 쪽을 먼저 확인해볼까요?`,
+        message: `${playerName}님, 어두운 방 안에서 두 가지가 보이네요. 어느 쪽을 먼저 확인해볼까요?`,
         image: 'images/sup.gif',
         options: [
-          { text: '상자 쪽을 확인한다', action: 'checkBox' },
-          { text: '선반 쪽을 확인한다', action: 'checkShelf' }
+          { text: '상자 쪽을 확인한다', action: 'checkBoxArea' },
+          { text: '선반 쪽을 확인한다', action: 'checkShelfArea' }
         ]
       });
     }
 
     // 🔥 상자 쪽 확인 선택
-    if (userMessage === 'checkBox') {
+    if (userMessage === 'checkBoxArea') {
+      boxAreaChecked = true;
+      
       if (boxBlocked) {
         return res.json({
           message: `${playerName}님, 상자를 다시는 열지 않기로 했잖아요... 다른 곳을 살펴볼까요?`,
           image: 'images/sad.gif',
           options: [
-            { text: '선반 쪽을 확인한다', action: 'checkShelf' }
+            { text: '선반 쪽을 확인한다', action: 'checkShelfArea' }
           ]
         });
       }
@@ -422,7 +434,7 @@ app.post('/chat', async (req, res) => {
           message: `${playerName}님, 이미 상자를 확인했어요. 쪽지도 읽었구요. 다른 곳을 살펴볼까요?`,
           image: 'images/neutral.png',
           options: [
-            { text: '선반 쪽을 확인한다', action: 'checkShelf' }
+            { text: '선반 쪽을 확인한다', action: 'checkShelfArea' }
           ]
         });
       }
@@ -438,8 +450,10 @@ app.post('/chat', async (req, res) => {
     }
 
     // 🔥 선반 쪽 확인 선택
-    if (userMessage === 'checkShelf') {
+    if (userMessage === 'checkShelfArea') {
+      shelfAreaChecked = true;
       shelfChecked = true;
+      
       if (!keyFound) {
         keyFound = true;
         return res.json({ 
@@ -460,23 +474,35 @@ app.post('/chat', async (req, res) => {
         boxOpened = true;
         boxDeclined = false;
         noteFound = true;
-        return res.json({
-          message: [
-            { type: 'steve', text: `${playerName}님, 상자를 열었어요... 빵과 물이 들어있어요. 그리고... 쪽지도 있네요.` },
-            { type: 'narration', text: "쪽지에는 '맞아'라고 인정했을 때, 우린 모든 진실을 알 수 있을 거예요. 라고 적혀 있습니다." }
-          ],
-          image: 'images/hap.gif',
-          options: [
-            { text: '선반 쪽을 확인한다', action: 'checkShelf' }
-          ]
-        });
+        
+        // 선반쪽을 아직 확인하지 않았다면 선택지 제공
+        if (!shelfAreaChecked) {
+          return res.json({
+            message: [
+              { type: 'steve', text: `${playerName}님, 상자를 열었어요... 빵과 물이 들어있어요. 그리고... 쪽지도 있네요.` },
+              { type: 'narration', text: "쪽지에는 '맞아'라고 인정했을 때, 우린 모든 진실을 알 수 있을 거예요. 라고 적혀 있습니다." }
+            ],
+            image: 'images/hap.gif',
+            options: [
+              { text: '선반 쪽을 확인한다', action: 'checkShelfArea' }
+            ]
+          });
+        } else {
+          return res.json({
+            message: [
+              { type: 'steve', text: `${playerName}님, 상자를 열었어요... 빵과 물이 들어있어요. 그리고... 쪽지도 있네요.` },
+              { type: 'narration', text: "쪽지에는 '맞아'라고 인정했을 때, 우린 모든 진실을 알 수 있을 거예요. 라고 적혀 있습니다." }
+            ],
+            image: 'images/hap.gif'
+          });
+        }
       } else {
         return res.json({
           message: `${playerName}님, 이미 확인했어요. 다른 곳을 살펴볼까요?`,
           image: 'images/neutral.png',
-          options: [
-            { text: '선반 쪽을 확인한다', action: 'checkShelf' }
-          ]
+          options: !shelfAreaChecked ? [
+            { text: '선반 쪽을 확인한다', action: 'checkShelfArea' }
+          ] : []
         });
       }
     }
@@ -485,11 +511,12 @@ app.post('/chat', async (req, res) => {
     if (userMessage === 'dontOpenBox') {
       boxDeclined = true;
       boxBlocked = true; // 앞으로 상자 접근을 막음
+      
       return res.json({
         message: `${playerName}님, 알겠어요. 그럼 선반 쪽으로 살펴볼까요?`,
         image: 'images/neutral.png',
         options: [
-          { text: '선반 쪽을 확인한다', action: 'checkShelf' }
+          { text: '선반 쪽을 확인한다', action: 'checkShelfArea' }
         ]
       });
     }
@@ -532,10 +559,14 @@ app.post('/chat', async (req, res) => {
     }
 
     if (userMessage.includes('열쇠로 문을 열어')) {
-      return res.json({
-        message: `${playerName}님, 문이 열린 것 같아요. 한 번 넘어가볼게요... 탈출이 눈 앞이네요!`,
-        clear: true
-      });
+      if (keyFound) {
+        secondRoomEntered = true;
+        return res.json({
+          message: `${playerName}님, 문이 열린 것 같아요. 한 번 넘어가볼게요... 탈출이 눈 앞이네요!`,
+          image: "images/hap.png",
+          clear: true
+        });
+      }
     }
 
     chatHistory.push({ role: 'user', content: userMessage });
