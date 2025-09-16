@@ -12,7 +12,35 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-app.use(cors());
+// CORS 설정을 한 번만 적용
+app.use(cors({
+  origin: function (origin, callback) {
+    // Render에서는 origin이 없을 수 있으므로 더 유연하게 설정
+    const allowedOrigins = [
+      'http://localhost:5001',
+      'http://localhost:5002', 
+      'http://localhost:5003',
+      'http://127.0.0.1:5001',
+      'http://127.0.0.1:5002',
+      'http://127.0.0.1:5003',
+      'http://127.0.0.1:5500',
+      'http://localhost:5500'
+    ];
+    
+    // Render 환경에서는 모든 origin 허용 (개발용)
+    if (process.env.NODE_ENV === 'production' || !origin) {
+      callback(null, true);
+    } else if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, true); // 개발 환경에서는 모든 origin 허용
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'X-Requested-With']
+}));
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '/')));
 
@@ -27,11 +55,8 @@ let boxDeclined = false;
 let keyFound = false;
 let secondRoomEntered = false;
 let helpResponded = false;
-let shelfChecked = false;
-let noteFound = false;
-let boxBlocked = false;
 
-// 🔥 플레이어 이름 관련 엔드포인트들 추가
+// 플레이어 이름 관련 엔드포인트들
 app.get('/get-player-name', (req, res) => {
   console.log(`[Server1] 이름 요청됨 - 현재 저장된 이름: "${playerName}"`);
   res.json({ name: playerName });
@@ -67,10 +92,14 @@ app.post('/sync-name', (req, res) => {
   }
 });
 
-// 🔥 다른 서버에서 이름을 가져오는 함수
+// 다른 서버에서 이름을 가져오는 함수 (Render에서는 localhost 대신 실제 URL 필요)
 async function fetchPlayerNameFromOtherServers() {
+  // Render 환경에서는 다른 서버 호출이 불가능하므로 주석 처리
+  // 필요한 경우 환경 변수로 다른 서버 URL 설정
+  /*
   try {
-    const response = await fetch('http://localhost:5002/');
+    const server2Url = process.env.SERVER2_URL || 'http://localhost:5002';
+    const response = await fetch(`${server2Url}/get-player-name`);
     const data = await response.json();
     if (data.name && data.name !== '플레이어') {
       playerName = data.name;
@@ -80,45 +109,8 @@ async function fetchPlayerNameFromOtherServers() {
   } catch (error) {
     console.log('[Server1] Server2에서 이름 가져오기 실패:', error.message);
   }
+  */
   
-  try {
-    const response = await fetch('http://localhost:5003/');
-    const data = await response.json();
-    if (data.name && data.name !== '플레이어') {
-      playerName = data.name;
-      console.log(`[Server1] Server3에서 이름 가져옴: ${playerName}`);
-      return true;
-    }
-  } catch (error) {
-    console.log('[Server1] Server3에서 이름 가져오기 실패:', error.message);
-  }
-  
-app.use(cors({
-  origin: function (origin, callback) {
-    const allowedOrigins = [
-      'http://localhost:5001',
-      'http://localhost:5002', 
-      'http://localhost:5003',
-      'http://127.0.0.1:5001',
-      'http://127.0.0.1:5002',
-      'http://127.0.0.1:5003',
-      'http://127.0.0.1:5500', // 🔥 Live Server 포트 추가
-      'http://localhost:5500',  // 🔥 Live Server 포트 추가
-      null // 로컬 파일 접근 허용
-    ];
-    
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.log(`[CORS] 차단된 origin: ${origin}`);
-      callback(null, true); // 개발 환경에서는 모든 origin 허용
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'X-Requested-With']
-}));
-
   return false;
 }
 
@@ -342,40 +334,8 @@ function createContext() {
 
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'server.html'));
+res.sendFile(path.join(__dirname, 'server.html'));
 });
-
-
-// 플레이어 이름을 클라이언트에 제공하는 엔드포인트
-app.get('/get-player-name', (req, res) => {
-  res.json({ name: playerName });
-});
-
-// 🔥 server3에서 이름을 받는 엔드포인트
-app.post('/set-name', (req, res) => {
-  const { name } = req.body;
-  if (name) {
-    playerName = name;
-    console.log(`[Server1] 플레이어 이름 설정: ${playerName}`);
-    res.json({ success: true, message: '이름이 설정되었습니다.' });
-  } else {
-    res.status(400).json({ success: false, message: '이름이 제공되지 않았습니다.' });
-  }
-});
-
-// 🔥 server3에서 이름을 가져오는 함수 (백업용)
-async function fetchPlayerNameFromServer3() {
-  try {
-    const response = await fetch('http://localhost:5003/get-player-name');
-    const data = await response.json();
-    if (data.name && data.name !== '플레이어') {
-      playerName = data.name;
-      console.log(`[Server1] Server3에서 이름 가져옴: ${playerName}`);
-    }
-  } catch (error) {
-    console.log('[Server1] Server3에서 이름 가져오기 실패:', error.message);
-  }
-}
 
 app.post('/chat', async (req, res) => {
   try {
@@ -392,9 +352,6 @@ app.post('/chat', async (req, res) => {
       keyFound = false;
       secondRoomEntered = false;
       helpResponded = false;
-      shelfChecked = false;
-      noteFound = false;
-      boxBlocked = false;
       return res.json({ 
         message: '게임이 초기화되었습니다.', 
         narration: '게임이 초기화되었습니다.' 
@@ -416,7 +373,7 @@ app.post('/chat', async (req, res) => {
       });
     }
   
-    // 🔥 거부 반응
+    // 거부 반응
     if (userMessage.includes('싫') || userMessage.includes('왜?') || 
         userMessage.includes('ㄴㄴ') || userMessage.includes('no') ||
         userMessage.includes('시발') || userMessage.includes('좆') || 
@@ -427,63 +384,126 @@ app.post('/chat', async (req, res) => {
       });
     }
 
-    if (userMessage.includes('싫') || userMessage.includes('왜?') || userMessage.includes('ㄴㄴ') || userMessage.includes('no') || userMessage.includes('시발') || userMessage.includes('좆')|| userMessage.includes('병신')) {
-      return res.json({ 
-        message: `${playerName}님과 대화를 이어갈 수 없다는 게 슬프네요.`, 
-        image: 'images/ang.gif'
+    // 상자 관련 로직들...
+    if (userMessage.includes('상자') && 
+        (userMessage.includes('?') || userMessage.includes('무슨') || userMessage.includes('어떤') || 
+         userMessage.includes('뭐') || userMessage.includes('어떻게'))) {
+      
+      if (boxOpened) {
+        return res.json({
+          message: `${playerName}님, 이미 확인했어요. 다른 곳을 살펴볼까요?`,
+          image: 'images/neutral.png'
+        });
+      } else if (boxDeclined) {
+        return res.json({
+          message: `${playerName}님, 우리 열지 않기로 했잖아요... 다시 열어보고 싶어졌나요?`,
+          image: 'images/sup.gif',
+          options: [
+            { text: '상자를 열어보자', action: 'openBox' },
+            { text: '역시 열지말자', action: 'dontOpenBox' }
+          ]
+        });
+      } else {
+        return res.json({
+          message: `${playerName}님, 작은 나무 상자예요. 이 상자를 열어볼까요?`,
+          image: 'images/sup.gif',
+          options: [
+            { text: '상자를 열어보자', action: 'openBox' },
+            { text: '상자를 열지말자', action: 'dontOpenBox' }
+          ]
+        });
+      }
+    }
+
+    // 버튼 액션 처리
+    if (userMessage === 'openBox') {
+      if (!boxOpened) {
+        boxOpened = true;
+        boxDeclined = false;
+        return res.json({
+          message: `${playerName}님, 상자를 열었어요... 빵과 물이 들어있어요. 이제 다른 곳을 살펴볼까요?`,
+          image: 'images/hap.gif'
+        });
+      } else {
+        return res.json({
+          message: `${playerName}님, 이미 확인했어요. 다른 곳을 살펴볼까요?`,
+          image: 'images/neutral.png'
+        });
+      }
+    }
+
+    if (userMessage === 'dontOpenBox') {
+      boxDeclined = true;
+      return res.json({
+        message: `${playerName}님, 알겠어요. 다른 곳을 살펴볼까요?`,
+        image: 'images/neutral.png'
       });
     }
-    
-    // 🔥 새로운 로직: 주변 탐색 시 첫 번째 선택지 제공
+
+    // 주변 환경 탐색
     if ((userMessage.includes('주변') && (userMessage.includes('뭐') || userMessage.includes('무엇'))) || 
-        userMessage.includes('뭔가 있어') || userMessage.includes('뭔가 보여') ||
+        userMessage.includes('뭐가 있어') || userMessage.includes('뭐가 보여') ||
         userMessage.includes('둘러보') || userMessage.includes('살펴보')) {
       
-      return res.json({
-        message: `${playerName}님, 어둠운 방 안에서 두 가지가 보이네요. 어느 쪽을 먼저 확인해볼까요?`,
-        image: 'images/sup.gif',
-        options: [
-          { text: '상자 쪽을 확인한다', action: 'checkBox' },
-          { text: '선반 쪽을 확인한다', action: 'checkShelf' }
-        ]
-      });
-    }
-
-  // 🔥 상자 쪽 확인 선택
-    if (userMessage === 'checkBox') {
-      if (boxBlocked) {
+      if (boxOpened) {
         return res.json({
-          message: `${playerName}님, 상자를 다시는 열지 않기로 했잖아요... 다른 곳을 살펴볼까요?`,
-          image: 'images/sad.gif',
+          message: `${playerName}님, 선반이 보여요. 그 옆에는 문도 있네요! 나갈 수 있을 것 같아요.`,
+          image: 'images/sup.gif'
+        });
+      } else {
+        return res.json({
+          message: `${playerName}님, 주변이 어둡고 축축한데, 오래된 나무 상자가 보이네요... 상자를 열어볼까요?`,
+          image: 'images/sup.gif',
           options: [
-            { text: '선반 쪽을 확인한다', action: 'checkShelf' }
+            { text: '상자를 열어보자', action: 'openBox' },
+            { text: '상자를 열지말자', action: 'dontOpenBox' }
           ]
         });
       }
-      
-      if (boxOpened && noteFound) {
-        return res.json({
-          message: `${playerName}님, 이미 상자를 확인했어요. 쪽지도 읽었구요. 다른 곳을 살펴볼까요?`,
-          image: 'images/neutral.png',
-          options: [
-            { text: '선반 쪽을 확인한다', action: 'checkShelf' }
-          ]
-        });
-      }
-      
-      return res.json({
-        message: `${playerName}님, 작은 나무 상자예요. 이 상자를 열어볼까요?`,
-        image: 'images/sup.gif',
-        options: [
-          { text: '상자를 열어보자', action: 'openBox' },
-          { text: '상자를 열어보지 않는다', action: 'dontOpenBox' }
-        ]
+    }
+
+// 🔥 상자 이외의 다른 것들 탐색 - 수정된 버전
+if ((userMessage.includes('상자말고') && userMessage.includes('다른')) ||
+    (userMessage.includes('상자말고') && userMessage.includes('뭐')) ||
+    (userMessage.includes('다른') && userMessage.includes('없')) ||
+    (userMessage.includes('주변') && userMessage.includes('없')) ||
+    (userMessage.includes('다른') && userMessage.includes('뭐')) ||
+    (userMessage.includes('또') && userMessage.includes('뭐'))) {
+  
+  // 상자를 열었든 안 열었든 선반과 문으로 유도, 버튼 없음
+  return res.json({ 
+    message: `${playerName}님, 선반이 보이는 것 같아요. 그 옆에는 문도 있네요! 나갈 수 있을 것 같아요.`,
+    image: 'images/sup.gif'
+    // options 제거 - 버튼이 나타나지 않음
+  });
+}
+    // 나머지 기존 조건들...
+
+    if (userMessage.includes('상자말고') && userMessage.includes('다른')) {
+      return res.json({ 
+        message: `${playerName}님, 선...반? 선반이 보이는 것 같아요. 그 옆에는 문도 있네요! 나갈 수 있을 것 같아요.` 
       });
     }
 
-// 🔥 선반 쪽 확인 선택
-    if (userMessage === 'checkShelf') {
-      shelfChecked = true;
+    if (userMessage.includes('상자말고') && userMessage.includes('뭐')) {
+      return res.json({ 
+        message: `${playerName}님, 선...반? 선반이 보이는 것 같아요. 그 옆에는 문도 있네요! 나갈 수 있을 것 같아요.` 
+      });
+    }
+
+    if (userMessage.includes('다른') && userMessage.includes('없')) {
+      return res.json({ 
+        message: `${playerName}님, 선...반? 선반이 보이는 것 같아요. 그 옆에는 문도 있네요! 나갈 수 있을 것 같아요.` 
+      });
+    }
+
+    if (userMessage.includes('주변') && userMessage.includes('없')) {
+      return res.json({ 
+        message: `${playerName}님, 선...반? 선반이 보이는 것 같아요. 그 옆에는 문도 있네요! 나갈 수 있을 것 같아요.` 
+      });
+    }
+
+    if (userMessage.includes('선반') && userMessage.includes('보자')) {
       if (!keyFound) {
         keyFound = true;
         return res.json({ 
@@ -498,55 +518,6 @@ app.post('/chat', async (req, res) => {
       }
     }
 
- // 🔥 상자 열기 선택
-    if (userMessage === 'openBox') {
-      if (!boxOpened) {
-        boxOpened = true;
-        boxDeclined = false;
-        noteFound = true;
-        return res.json({
-          message: [
-            { type: 'steve', text: `${playerName}님, 상자를 열었어요... 빵과 물이 들어있어요. 그리고... 쪽지도 있네요.` },
-            { type: 'narration', text: "쪽지에는 '맞아'라고 인정했을 때, 우린 모든 진실을 알 수 있을 거예요. 라고 적혀 있습니다." }
-          ],
-          image: 'images/hap.gif',
-          options: [
-            { text: '선반 쪽을 확인한다', action: 'checkShelf' }
-          ]
-        });
-      } else {
-        return res.json({
-          message: `${playerName}님, 이미 확인했어요. 다른 곳을 살펴볼까요?`,
-          image: 'images/neutral.png',
-          options: [
-            { text: '선반 쪽을 확인한다', action: 'checkShelf' }
-          ]
-        });
-      }
-    }
-
-    // 🔥 상자 열지 않기 선택
-    if (userMessage === 'dontOpenBox') {
-      boxDeclined = true;
-      boxBlocked = true; // 앞으로 상자 접근을 막음
-      return res.json({
-        message: `${playerName}님, 알겠어요. 그럼 선반 쪽으로 살펴볼까요?`,
-        image: 'images/neutral.png',
-        options: [
-          { text: '선반 쪽을 확인한다', action: 'checkShelf' }
-        ]
-      });
-    }
-
-    // 🔥 상자 재언급 시 차단
-    if (boxBlocked && userMessage.includes('상자')) {
-      return res.json({
-        message: `${playerName}님, 상자를 다시는 열지 않기로 했잖아요... 다른 걸 살펴봐요.`,
-        image: 'images/sad.gif'
-      });
-    }
-
-    // 문 열기 로직
     if (userMessage.includes('열쇠') && userMessage.includes('문') && userMessage.includes('열자')) {
       if (keyFound) {
         secondRoomEntered = true;
@@ -555,8 +526,7 @@ app.post('/chat', async (req, res) => {
             { "type": "narration", "text": "문이 열렸습니다. 다음 방으로 이동합니다." },
             { "type": "user", "text": `스티브: ${playerName}님, 문이 열렸어요... 다음 방에 도착했어요..!` }
           ],
-          "image": "images/hap.png",
-          "clear": true
+          "image": "images/hap.png"
         });
       }
     }
@@ -569,8 +539,7 @@ app.post('/chat', async (req, res) => {
             { "type": "narration", "text": "문이 열렸습니다. 다음 방으로 이동합니다." },
             { "type": "user", "text": `스티브: ${playerName}님, 문이 열렸어요... 다음 방에 도착했어요..!` }
           ],
-          "image": "images/hap.png",
-          "clear": true
+          "image": "images/hap.png"
         });
       }
     }
@@ -588,7 +557,7 @@ app.post('/chat', async (req, res) => {
       const completion = await openai.chat.completions.create({
         model: 'gpt-4o',
         messages: [
-          { role: 'system', content: createContext() }, // 🔥 함수 호출로 최신 컨텍스트 사용
+          { role: 'system', content: createContext() },
           ...chatHistory.slice(-10),
         ],
       });
@@ -606,21 +575,18 @@ app.post('/chat', async (req, res) => {
   }
 });
 
-app.get('/get-player-name', (req, res) => {
-  res.json({ name: playerName });
-});
-
-const PORT = 5001;
+// Render는 PORT 환경 변수를 제공합니다
+const PORT = process.env.PORT || 5001;
 
 const start = () => {
-  app.listen(PORT, '0.0.0.0', async () => {  // ← 모든 네트워크 인터페이스 허용
-    console.log(`✅ Chapter 2 서버 실행 중: http://192.168.0.10:${PORT}`);
+  app.listen(PORT, '0.0.0.0', async () => {
+    console.log(`✅ Chapter 2 서버 실행 중: http://0.0.0.0:${PORT}`);
     
-    // 🔥 서버 시작시 server3에서 이름 가져오기 시도
-    await fetchPlayerNameFromServer3();
+    // 서버 시작시 다른 서버에서 이름 가져오기 시도 (Render에서는 주석 처리)
+    // await fetchPlayerNameFromOtherServers();
   });
 };
 
-
-
-export { start };
+if (import.meta.url === `file://${process.argv[1]}`) {
+  start();
+}
