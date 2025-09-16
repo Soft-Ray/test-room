@@ -55,6 +55,9 @@ let boxDeclined = false;
 let keyFound = false;
 let secondRoomEntered = false;
 let helpResponded = false;
+let shelfChecked = false;
+let noteFound = false;
+let boxBlocked = false;  
 
 // 플레이어 이름 관련 엔드포인트들
 app.get('/get-player-name', (req, res) => {
@@ -352,6 +355,9 @@ app.post('/chat', async (req, res) => {
       keyFound = false;
       secondRoomEntered = false;
       helpResponded = false;
+      shelfChecked = false;
+      noteFound = false;
+      boxBlocked = false;
       return res.json({ 
         message: '게임이 초기화되었습니다.', 
         narration: '게임이 초기화되었습니다.' 
@@ -384,126 +390,56 @@ app.post('/chat', async (req, res) => {
       });
     }
 
-    // 상자 관련 로직들...
-    if (userMessage.includes('상자') && 
-        (userMessage.includes('?') || userMessage.includes('무슨') || userMessage.includes('어떤') || 
-         userMessage.includes('뭐') || userMessage.includes('어떻게'))) {
-      
-      if (boxOpened) {
-        return res.json({
-          message: `${playerName}님, 이미 확인했어요. 다른 곳을 살펴볼까요?`,
-          image: 'images/neutral.png'
-        });
-      } else if (boxDeclined) {
-        return res.json({
-          message: `${playerName}님, 우리 열지 않기로 했잖아요... 다시 열어보고 싶어졌나요?`,
-          image: 'images/sup.gif',
-          options: [
-            { text: '상자를 열어보자', action: 'openBox' },
-            { text: '역시 열지말자', action: 'dontOpenBox' }
-          ]
-        });
-      } else {
-        return res.json({
-          message: `${playerName}님, 작은 나무 상자예요. 이 상자를 열어볼까요?`,
-          image: 'images/sup.gif',
-          options: [
-            { text: '상자를 열어보자', action: 'openBox' },
-            { text: '상자를 열지말자', action: 'dontOpenBox' }
-          ]
-        });
-      }
-    }
-
-    // 버튼 액션 처리
-    if (userMessage === 'openBox') {
-      if (!boxOpened) {
-        boxOpened = true;
-        boxDeclined = false;
-        return res.json({
-          message: `${playerName}님, 상자를 열었어요... 빵과 물이 들어있어요. 이제 다른 곳을 살펴볼까요?`,
-          image: 'images/hap.gif'
-        });
-      } else {
-        return res.json({
-          message: `${playerName}님, 이미 확인했어요. 다른 곳을 살펴볼까요?`,
-          image: 'images/neutral.png'
-        });
-      }
-    }
-
-    if (userMessage === 'dontOpenBox') {
-      boxDeclined = true;
-      return res.json({
-        message: `${playerName}님, 알겠어요. 다른 곳을 살펴볼까요?`,
-        image: 'images/neutral.png'
-      });
-    }
-
-    // 주변 환경 탐색
+    // 🔥 새로운 로직: 주변 탐색 시 첫 번째 선택지 제공
     if ((userMessage.includes('주변') && (userMessage.includes('뭐') || userMessage.includes('무엇'))) || 
-        userMessage.includes('뭐가 있어') || userMessage.includes('뭐가 보여') ||
+        userMessage.includes('뭔가 있어') || userMessage.includes('뭔가 보여') ||
         userMessage.includes('둘러보') || userMessage.includes('살펴보')) {
       
-      if (boxOpened) {
+      return res.json({
+        message: `${playerName}님, 어둠운 방 안에서 두 가지가 보이네요. 어느 쪽을 먼저 확인해볼까요?`,
+        image: 'images/sup.gif',
+        options: [
+          { text: '상자 쪽을 확인한다', action: 'checkBox' },
+          { text: '선반 쪽을 확인한다', action: 'checkShelf' }
+        ]
+      });
+    }
+
+    // 🔥 상자 쪽 확인 선택
+    if (userMessage === 'checkBox') {
+      if (boxBlocked) {
         return res.json({
-          message: `${playerName}님, 선반이 보여요. 그 옆에는 문도 있네요! 나갈 수 있을 것 같아요.`,
-          image: 'images/sup.gif'
-        });
-      } else {
-        return res.json({
-          message: `${playerName}님, 주변이 어둡고 축축한데, 오래된 나무 상자가 보이네요... 상자를 열어볼까요?`,
-          image: 'images/sup.gif',
+          message: `${playerName}님, 상자를 다시는 열지 않기로 했잖아요... 다른 곳을 살펴볼까요?`,
+          image: 'images/sad.gif',
           options: [
-            { text: '상자를 열어보자', action: 'openBox' },
-            { text: '상자를 열지말자', action: 'dontOpenBox' }
+            { text: '선반 쪽을 확인한다', action: 'checkShelf' }
           ]
         });
       }
-    }
-
-// 🔥 상자 이외의 다른 것들 탐색 - 수정된 버전
-if ((userMessage.includes('상자말고') && userMessage.includes('다른')) ||
-    (userMessage.includes('상자말고') && userMessage.includes('뭐')) ||
-    (userMessage.includes('다른') && userMessage.includes('없')) ||
-    (userMessage.includes('주변') && userMessage.includes('없')) ||
-    (userMessage.includes('다른') && userMessage.includes('뭐')) ||
-    (userMessage.includes('또') && userMessage.includes('뭐'))) {
-  
-  // 상자를 열었든 안 열었든 선반과 문으로 유도, 버튼 없음
-  return res.json({ 
-    message: `${playerName}님, 선반이 보이는 것 같아요. 그 옆에는 문도 있네요! 나갈 수 있을 것 같아요.`,
-    image: 'images/sup.gif'
-    // options 제거 - 버튼이 나타나지 않음
-  });
-}
-    // 나머지 기존 조건들...
-
-    if (userMessage.includes('상자말고') && userMessage.includes('다른')) {
-      return res.json({ 
-        message: `${playerName}님, 선...반? 선반이 보이는 것 같아요. 그 옆에는 문도 있네요! 나갈 수 있을 것 같아요.` 
+      
+      if (boxOpened && noteFound) {
+        return res.json({
+          message: `${playerName}님, 이미 상자를 확인했어요. 쪽지도 읽었구요. 다른 곳을 살펴볼까요?`,
+          image: 'images/neutral.png',
+          options: [
+            { text: '선반 쪽을 확인한다', action: 'checkShelf' }
+          ]
+        });
+      }
+      
+      return res.json({
+        message: `${playerName}님, 작은 나무 상자예요. 이 상자를 열어볼까요?`,
+        image: 'images/sup.gif',
+        options: [
+          { text: '상자를 열어보자', action: 'openBox' },
+          { text: '상자를 열어보지 않는다', action: 'dontOpenBox' }
+        ]
       });
     }
 
-    if (userMessage.includes('상자말고') && userMessage.includes('뭐')) {
-      return res.json({ 
-        message: `${playerName}님, 선...반? 선반이 보이는 것 같아요. 그 옆에는 문도 있네요! 나갈 수 있을 것 같아요.` 
-      });
-    }
-
-    if (userMessage.includes('다른') && userMessage.includes('없')) {
-      return res.json({ 
-        message: `${playerName}님, 선...반? 선반이 보이는 것 같아요. 그 옆에는 문도 있네요! 나갈 수 있을 것 같아요.` 
-      });
-    }
-
-    if (userMessage.includes('주변') && userMessage.includes('없')) {
-      return res.json({ 
-        message: `${playerName}님, 선...반? 선반이 보이는 것 같아요. 그 옆에는 문도 있네요! 나갈 수 있을 것 같아요.` 
-      });
-    }
-
-    if (userMessage.includes('선반') && userMessage.includes('보자')) {
+    // 🔥 선반 쪽 확인 선택
+    if (userMessage === 'checkShelf') {
+      shelfChecked = true;
       if (!keyFound) {
         keyFound = true;
         return res.json({ 
@@ -518,6 +454,55 @@ if ((userMessage.includes('상자말고') && userMessage.includes('다른')) ||
       }
     }
 
+    // 🔥 상자 열기 선택
+    if (userMessage === 'openBox') {
+      if (!boxOpened) {
+        boxOpened = true;
+        boxDeclined = false;
+        noteFound = true;
+        return res.json({
+          message: [
+            { type: 'steve', text: `${playerName}님, 상자를 열었어요... 빵과 물이 들어있어요. 그리고... 쪽지도 있네요.` },
+            { type: 'narration', text: "쪽지에는 '맞아'라고 인정했을 때, 우린 모든 진실을 알 수 있을 거예요. 라고 적혀 있습니다." }
+          ],
+          image: 'images/hap.gif',
+          options: [
+            { text: '선반 쪽을 확인한다', action: 'checkShelf' }
+          ]
+        });
+      } else {
+        return res.json({
+          message: `${playerName}님, 이미 확인했어요. 다른 곳을 살펴볼까요?`,
+          image: 'images/neutral.png',
+          options: [
+            { text: '선반 쪽을 확인한다', action: 'checkShelf' }
+          ]
+        });
+      }
+    }
+
+    // 🔥 상자 열지 않기 선택
+    if (userMessage === 'dontOpenBox') {
+      boxDeclined = true;
+      boxBlocked = true; // 앞으로 상자 접근을 막음
+      return res.json({
+        message: `${playerName}님, 알겠어요. 그럼 선반 쪽으로 살펴볼까요?`,
+        image: 'images/neutral.png',
+        options: [
+          { text: '선반 쪽을 확인한다', action: 'checkShelf' }
+        ]
+      });
+    }
+
+    // 🔥 상자 재언급 시 차단
+    if (boxBlocked && userMessage.includes('상자')) {
+      return res.json({
+        message: `${playerName}님, 상자를 다시는 열지 않기로 했잖아요... 다른 걸 살펴봐요.`,
+        image: 'images/sad.gif'
+      });
+    }
+
+    // 문 열기 로직
     if (userMessage.includes('열쇠') && userMessage.includes('문') && userMessage.includes('열자')) {
       if (keyFound) {
         secondRoomEntered = true;
@@ -526,7 +511,8 @@ if ((userMessage.includes('상자말고') && userMessage.includes('다른')) ||
             { "type": "narration", "text": "문이 열렸습니다. 다음 방으로 이동합니다." },
             { "type": "user", "text": `스티브: ${playerName}님, 문이 열렸어요... 다음 방에 도착했어요..!` }
           ],
-          "image": "images/hap.png"
+          "image": "images/hap.png",
+          "clear": true
         });
       }
     }
@@ -539,7 +525,8 @@ if ((userMessage.includes('상자말고') && userMessage.includes('다른')) ||
             { "type": "narration", "text": "문이 열렸습니다. 다음 방으로 이동합니다." },
             { "type": "user", "text": `스티브: ${playerName}님, 문이 열렸어요... 다음 방에 도착했어요..!` }
           ],
-          "image": "images/hap.png"
+          "image": "images/hap.png",
+          "clear": true
         });
       }
     }
