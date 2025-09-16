@@ -47,13 +47,21 @@
       color: white;
       font-size: 2vw;
     }
+
+    .input-group {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 10px;
+    }
         
     .name-input-container input {
       padding: 10px;
       font-size: 1.2vw;
       border-radius: 5px;
       border: none;
-      margin-top: 10px;
+      margin-right: 10px;
+      min-width: 200px;
     }
         
     .name-submit-btn {
@@ -64,7 +72,6 @@
       color: #000;
       border-radius: 5px;
       cursor: pointer;
-      margin-left: 10px;
     }
 
     .name-submit-btn:disabled {
@@ -84,13 +91,15 @@
       color: #ccc;
     }
 
-    /* 심플한 진행바 */
+    /* 진행바를 입력 필드와 버튼의 전체 너비에 맞춤 */
     .cat-loading-container {
       margin-top: 30px;
-      width: 400px;
       height: 30px;
       position: relative;
       display: none;
+      /* 입력 그룹과 같은 너비로 설정 */
+      width: 100%;
+      max-width: 400px; /* 최대 너비 제한 */
     }
 
     .progress-bar-container {
@@ -175,14 +184,16 @@
       <label for="name">이름을 입력해주세요</label>
       <br>
       <br>
-      <input type="text" id="name" placeholder="이름 입력" />
-      <button class="name-submit-btn" id="name-submit-btn">확인</button>
+      <div class="input-group">
+        <input type="text" id="name" placeholder="이름 입력" />
+        <button class="name-submit-btn" id="name-submit-btn">확인</button>
+      </div>
       <div class="loading" id="loading" style="display: none;">
         이름을 모든 서버에 전송 중...
       </div>
       <div class="status" id="status"></div>
       
-      <!-- 심플한 진행바 -->
+      <!-- 진행바 -->
       <div class="cat-loading-container" id="cat-loading-container">
         <div class="progress-bar-container">
           <div class="progress-bar" id="progress-bar"></div>
