@@ -48,32 +48,24 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// 🔥 게임 상태 변수들을 함수로 초기화
-function initializeGameState() {
-  return {
-    playerName: "플레이어",
-    chatHistory: [],
-    boxOpened: false,
-    boxDeclined: false,
-    keyFound: false,
-    secondRoomEntered: false,
-    helpResponded: false,
-    shelfChecked: false,
-    noteFound: false,
-    boxBlocked: false,
-    exploredAreas: false,
-    boxAreaChecked: false,
-    shelfAreaChecked: false
-  };
-}
-
-// 게임 상태 초기화
-let gameState = initializeGameState();
+let playerName = "플레이어"; // 기본값
+let chatHistory = [];
+let boxOpened = false;
+let boxDeclined = false;
+let keyFound = false;
+let secondRoomEntered = false;
+let helpResponded = false;
+let shelfChecked = false;
+let noteFound = false;
+let boxBlocked = false;
+let exploredAreas = false;  // 처음 주변 탐색 여부
+let boxAreaChecked = false; // 상자쪽 확인 여부
+let shelfAreaChecked = false; // 선반쪽 확인 여부 
 
 // 플레이어 이름 관련 엔드포인트들
 app.get('/get-player-name', (req, res) => {
-  console.log(`[Server1] 이름 요청됨 - 현재 저장된 이름: "${gameState.playerName}"`);
-  res.json({ name: gameState.playerName });
+  console.log(`[Server1] 이름 요청됨 - 현재 저장된 이름: "${playerName}"`);
+  res.json({ name: playerName });
 });
 
 app.post('/set-name', (req, res) => {
@@ -82,12 +74,12 @@ app.post('/set-name', (req, res) => {
   
   if (name && name.trim() !== '' && name !== '플레이어') {
     const newName = name.trim();
-    gameState.playerName = newName;
-    console.log(`[Server1] ✅ 플레이어 이름 설정 완료: "${gameState.playerName}"`);
-    res.json({ success: true, message: '이름이 설정되었습니다.', name: gameState.playerName });
+    playerName = newName;
+    console.log(`[Server1] ✅ 플레이어 이름 설정 완료: "${playerName}"`);
+    res.json({ success: true, message: '이름이 설정되었습니다.', name: playerName });
   } else {
     console.log(`[Server1] ❌ 유효하지 않은 이름: "${name}"`);
-    res.json({ success: false, message: '유효하지 않은 이름입니다.', name: gameState.playerName });
+    res.json({ success: false, message: '유효하지 않은 이름입니다.', name: playerName });
   }
 });
 
@@ -97,12 +89,12 @@ app.post('/sync-name', (req, res) => {
   
   if (name && name.trim() !== '' && name !== '플레이어') {
     const newName = name.trim();
-    gameState.playerName = newName;
-    console.log(`[Server1] ✅ 플레이어 이름 동기화 완료: "${gameState.playerName}"`);
-    res.json({ success: true, name: gameState.playerName, message: 'Name synced successfully' });
+    playerName = newName;
+    console.log(`[Server1] ✅ 플레이어 이름 동기화 완료: "${playerName}"`);
+    res.json({ success: true, name: playerName, message: 'Name synced successfully' });
   } else {
     console.log(`[Server1] ❌ 동기화 실패 - 유효하지 않은 이름: "${name}"`);
-    res.json({ success: false, name: gameState.playerName, message: 'Invalid name for sync' });
+    res.json({ success: false, name: playerName, message: 'Invalid name for sync' });
   }
 });
 
