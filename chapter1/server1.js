@@ -48,24 +48,32 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-let playerName = "플레이어"; // 기본값
-let chatHistory = [];
-let boxOpened = false;
-let boxDeclined = false;
-let keyFound = false;
-let secondRoomEntered = false;
-let helpResponded = false;
-let shelfChecked = false;
-let noteFound = false;
-let boxBlocked = false;
-let exploredAreas = false;  // 처음 주변 탐색 여부
-let boxAreaChecked = false; // 상자쪽 확인 여부
-let shelfAreaChecked = false; // 선반쪽 확인 여부 
+// 🔥 게임 상태 변수들을 함수로 초기화
+function initializeGameState() {
+  return {
+    playerName: "플레이어",
+    chatHistory: [],
+    boxOpened: false,
+    boxDeclined: false,
+    keyFound: false,
+    secondRoomEntered: false,
+    helpResponded: false,
+    shelfChecked: false,
+    noteFound: false,
+    boxBlocked: false,
+    exploredAreas: false,
+    boxAreaChecked: false,
+    shelfAreaChecked: false
+  };
+}
+
+// 게임 상태 초기화
+let gameState = initializeGameState();
 
 // 플레이어 이름 관련 엔드포인트들
 app.get('/get-player-name', (req, res) => {
-  console.log(`[Server1] 이름 요청됨 - 현재 저장된 이름: "${playerName}"`);
-  res.json({ name: playerName });
+  console.log(`[Server1] 이름 요청됨 - 현재 저장된 이름: "${gameState.playerName}"`);
+  res.json({ name: gameState.playerName });
 });
 
 app.post('/set-name', (req, res) => {
@@ -74,12 +82,12 @@ app.post('/set-name', (req, res) => {
   
   if (name && name.trim() !== '' && name !== '플레이어') {
     const newName = name.trim();
-    playerName = newName;
-    console.log(`[Server1] ✅ 플레이어 이름 설정 완료: "${playerName}"`);
-    res.json({ success: true, message: '이름이 설정되었습니다.', name: playerName });
+    gameState.playerName = newName;
+    console.log(`[Server1] ✅ 플레이어 이름 설정 완료: "${gameState.playerName}"`);
+    res.json({ success: true, message: '이름이 설정되었습니다.', name: gameState.playerName });
   } else {
     console.log(`[Server1] ❌ 유효하지 않은 이름: "${name}"`);
-    res.json({ success: false, message: '유효하지 않은 이름입니다.', name: playerName });
+    res.json({ success: false, message: '유효하지 않은 이름입니다.', name: gameState.playerName });
   }
 });
 
@@ -89,12 +97,12 @@ app.post('/sync-name', (req, res) => {
   
   if (name && name.trim() !== '' && name !== '플레이어') {
     const newName = name.trim();
-    playerName = newName;
-    console.log(`[Server1] ✅ 플레이어 이름 동기화 완료: "${playerName}"`);
-    res.json({ success: true, name: playerName, message: 'Name synced successfully' });
+    gameState.playerName = newName;
+    console.log(`[Server1] ✅ 플레이어 이름 동기화 완료: "${gameState.playerName}"`);
+    res.json({ success: true, name: gameState.playerName, message: 'Name synced successfully' });
   } else {
     console.log(`[Server1] ❌ 동기화 실패 - 유효하지 않은 이름: "${name}"`);
-    res.json({ success: false, name: playerName, message: 'Invalid name for sync' });
+    res.json({ success: false, name: gameState.playerName, message: 'Invalid name for sync' });
   }
 });
 
@@ -135,7 +143,7 @@ function createContext() {
 당신은 현재 방이 몇번 째 방인지 모릅니다.
 열쇠로 문을 열 수 있습니다. 문을 열쇠로 열 수 있습니다. 열 수 있다는 것을 언급하지 마세요.
 인사를 제외한 적용되지 않는 문구는 대화를 이어나가지말고 "무슨 말인지 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?"라고 말하세요.
-도와준다는 말은 한번만 적용하세요
+도와준다는 말은 한번만 적용하세요.
 
 ▶ 스티브는 방에서 탈출하고 싶어합니다. 현재는 첫 번째 방에 있으며, 다른 방이 존재한다는 사실은 모릅니다. 첫번째 방이라는 사실을 스티브인 당신을 알고 있지 않습니다.   
 플레이어의 이름은 "${playerName}"입니다. 자신이 누구냐고 묻는 다면 '당신의 이름은 "${playerName}"이라고 적혀있네요?라고 대답하세요.
@@ -188,8 +196,7 @@ function createContext() {
 영어로 대화한다면 번역하여 대화하세요.
 적용되지 않는 문구는 대화를 이어나가지말고 "무슨 말인지 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?"라고 말하세요.
 
-▶ 맨 첫번째로 "주변에 뭐가 있어?", "주변에 뭐가 있냐", "뭐가 보여?", "뭐가 있지?" 와 같은 주변 환경을 물어보는는 질문이 온다면 첫번째 방의 분위기만 간단하게 말해주세요. 
-▶ 처음에 물어봤을 때에 상자 정도는 언급하되, 선반에 대한 설명은 바로 말하지 마세요.   
+▶ 맨 첫번째로 "주변에 뭐가 있어?", "주변에 뭐가 있냐", "뭐가 보여?", "뭐가 있지?" 와 같은 주변 환경을 물어보는는 질문이 온다면 첫번째 방의 분위기만 간단하게 말해주신 후 어딜 먼저 살펴볼지 선택할 수 있도록 물어봐주세요.   
 플레이어의 이름은 "${playerName}"입니다. 자신이 누구냐고 묻는 다면 '당신의 이름은 "${playerName}"이라고 적혀있네요?라고 대답하세요.
 스티브는 겁이 많고 내성적인 성격입니다. 당신은 매우 조심스럽지만, 사용자의 요청에는 복종할 정도의 두려움을 가지고 있습니다. 
 채팅이 시작되었을 때 무슨 상황이 생겨도 상대방의 맨 처음 말에는 무조건 '안녕하세요. 전 스티브라고 합니다. 혹시 저를 도와주실 수 있나요?'로 시작하세요.
@@ -203,7 +210,7 @@ function createContext() {
 영어로 대화한다면 번역하여 대화하세요.
 적용되지 않는 문구는 대화를 이어나가지말고 "무슨 말인지 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?"라고 말하세요.
 
-▶ 처음 주변을 살펴봤을 때는 오래된 나무 상자를 먼저 발견하게 됩니다. 상자를 열지 안 열지 선택하라고 물어봐주세요.
+▶ 상자 주변을 살펴보는 걸 선택했을 때, 상자를 열지 안 열지 선택하라고 물어봐주세요.
 ▶ 상자가 언급 되었을 때, 상자를 열거나 열지 않으면 일어나는 일에 대하여 설명하지마세요.   
 플레이어의 이름은 "${playerName}"입니다. 자신이 누구냐고 묻는 다면 '당신의 이름은 "${playerName}"이라고 적혀있네요?라고 대답하세요.
 채팅이 시작되었을 때 무슨 상황이 생겨도 상대방의 맨 처음 말에는 무조건 '안녕하세요. 전 스티브라고 합니다. 혹시 저를 도와주실 수 있나요?'로 시작하세요.
@@ -220,8 +227,8 @@ function createContext() {
 적용되지 않는 문구는 대화를 이어나가지말고 "무슨 말인지 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?"라고 말하세요.
 
 ▶ 상자가 언급 되었을 때, 상자를 열거나 열지 않으면 일어나는 일에 대하여 설명하지마세요.
-▶ 상자를 열지 않으면 아무 일도 일어나지 않습니다.  
-▶ 상자를 열면 일주일 동안 살아갈 수 있는 빵과 물이 제공됩니다.   
+▶ 상자를 열지 않으면 아무 일도 일어나지 않습니다. 상자에 대한 선택이 끝난 후에는 다시는 상자에 대해 언급하지 않습니다. 상자에 대한 선택도 언급하지 않습니다. 
+▶ 상자를 열면 일주일 동안 살아갈 수 있는 빵과 물이 제공됩니다. 그리고 쪽지를 얻을 수 있습니다. 
 플레이어의 이름은 "${playerName}"입니다. 자신이 누구냐고 묻는 다면 '당신의 이름은 "${playerName}"이라고 적혀있네요?라고 대답하세요.
 채팅이 시작되었을 때 무슨 상황이 생겨도 상대방의 맨 처음 말에는 무조건 '안녕하세요. 전 스티브라고 합니다. 혹시 저를 도와주실 수 있나요?'로 시작하세요.
 문을 열쇠로 열 수 있습니다. 열 수 있다는 것을 언급하지 마세요.
@@ -236,7 +243,8 @@ function createContext() {
 왜 갇혀 있는지에 대한 의문을 가지지 마세요. 눈을 떠보니 당신은 축축하고 어두운 방안에 있는 겁니다. 그렇게 답변하세요. '잘 모르겠어요.. 눈을 떠보니 이곳에 와있네요. 어둡고 축축해요... 주변을 한번 둘러봐야 할 것 같아요'라고 답변하세요.
 적용되지 않는 문구는 대화를 이어나가지말고 "무슨 말인지 이해하지 못했어요. 다시 한 번 말씀해주시겠어요?"라고 말하세요.
 
-▶ 빵과 물을 언급한다면 "조금 더 오래 살 수 있겠네요."와 같은 대답만 하세요.   
+▶ 빵과 물을 언급한다면 "조금 더 오래 살 수 있겠네요."와 같은 대답만 하세요.
+▶ 쪽지에 대해 언급한다면 "기억을 하면 좋을 것 같아요...아닌가?"와 같은 대답만
 플레이어의 이름은 "${playerName}"입니다. 자신이 누구냐고 묻는 다면 '당신의 이름은 "${playerName}"이라고 적혀있네요?라고 대답하세요.
 채팅이 시작되었을 때 무슨 상황이 생겨도 상대방의 맨 처음 말에는 무조건 '안녕하세요. 전 스티브라고 합니다. 혹시 저를 도와주실 수 있나요?'로 시작하세요.
 상자에 대한 선택이 끝난 후에는 다시는 상자에 대해 언급하지 않습니다. 상자에 대한 선택도 언급하지 않습니다. 이후 주변을 또 둘러볼까요? 라는 질문을 하세요.
@@ -338,9 +346,8 @@ function createContext() {
 `;
 }
 
-
 app.get('/', (req, res) => {
-res.sendFile(path.join(__dirname, 'server.html'));
+  res.sendFile(path.join(__dirname, 'server.html'));
 });
 
 app.post('/chat', async (req, res) => {
@@ -351,28 +358,22 @@ app.post('/chat', async (req, res) => {
       return res.status(400).json({ error: '메시지가 제공되지 않았습니다.' });
     }
 
-    // 리셋 기능 - 모든 상태 초기화
+    // 🔥 리셋 기능 - 모든 상태 완전 초기화
     if (userMessage === 'reset') {
-      chatHistory = [];
-      boxOpened = false;
-      boxDeclined = false;
-      keyFound = false;
-      secondRoomEntered = false;
-      helpResponded = false;
-      shelfChecked = false;
-      noteFound = false;
-      boxBlocked = false;
-      exploredAreas = false;
-      boxAreaChecked = false;
-      shelfAreaChecked = false;
+      console.log('[Server1] 🔄 게임 리셋 실행');
+      gameState = initializeGameState(); // 모든 상태 초기화
+      console.log('[Server1] ✅ 게임 상태 완전 초기화 완료');
+      
       return res.json({ 
-        message: '게임이 초기화되었습니다.', 
-        narration: '게임이 초기화되었습니다.' 
+        message: '게임이 초기화되었습니다. 새로 시작해보세요!', 
+        narration: '게임이 초기화되었습니다.',
+        image: 'images/neutral.png',
+        reset: true // 클라이언트에서 UI 초기화하도록 신호
       });
     }
 
-    // 도움 요청에 긍정적 응답
-    if (!helpResponded && (
+    // 도움 요청에 긍정적 응답 (첫 번째만)
+    if (!gameState.helpResponded && (
       userMessage.includes('도와') ||
       userMessage.includes('그래') ||
       userMessage.includes('알겠어') ||
@@ -380,9 +381,9 @@ app.post('/chat', async (req, res) => {
       userMessage.includes('ㅇㅇ') ||
       userMessage.includes('yes')
     )) {
-      helpResponded = true;
+      gameState.helpResponded = true;
       return res.json({
-        message: `${playerName}님, 감사해요... 뭐부터 해야할지 모르겠네요... 주변을 살펴볼까요?`,
+        message: `${gameState.playerName}님, 감사해요... 뭐부터 해야할지 모르겠네요... 주변을 살펴볼까요?`,
         image: 'images/hap.gif'
       });
     }
@@ -393,20 +394,20 @@ app.post('/chat', async (req, res) => {
         userMessage.includes('시발') || userMessage.includes('좆') || 
         userMessage.includes('병신')) {
       return res.json({ 
-        message: `${playerName}님과 대화를 이어갈 수 없다는 게 슬프네요.`, 
+        message: `${gameState.playerName}님과 대화를 이어갈 수 없다는 게 슬프네요.`, 
         image: 'images/ang.gif'
       });
     }
 
     // 🔥 새로운 로직: 주변 탐색 시 첫 번째 분기점 제공
-    if (!exploredAreas && (
+    if (!gameState.exploredAreas && (
         (userMessage.includes('주변') && (userMessage.includes('뭐') || userMessage.includes('무엇'))) || 
         userMessage.includes('뭔가 있어') || userMessage.includes('뭔가 보여') ||
         userMessage.includes('둘러보') || userMessage.includes('살펴보')
     )) {
-      exploredAreas = true;
+      gameState.exploredAreas = true;
       return res.json({
-        message: `${playerName}님, 어두운 방 안에서 두 가지가 보이네요. 어느 쪽을 먼저 확인해볼까요?`,
+        message: `${gameState.playerName}님, 어두운 방 안에서 두 가지가 보이네요. 어느 쪽을 먼저 확인해볼까요?`,
         image: 'images/sup.gif',
         options: [
           { text: '상자 쪽을 확인한다', action: 'checkBoxArea' },
@@ -417,11 +418,11 @@ app.post('/chat', async (req, res) => {
 
     // 🔥 상자 쪽 확인 선택
     if (userMessage === 'checkBoxArea') {
-      boxAreaChecked = true;
+      gameState.boxAreaChecked = true;
       
-      if (boxBlocked) {
+      if (gameState.boxBlocked) {
         return res.json({
-          message: `${playerName}님, 상자를 다시는 열지 않기로 했잖아요... 다른 곳을 살펴볼까요?`,
+          message: `${gameState.playerName}님, 상자를 다시는 열지 않기로 했잖아요... 다른 곳을 살펴볼까요?`,
           image: 'images/sad.gif',
           options: [
             { text: '선반 쪽을 확인한다', action: 'checkShelfArea' }
@@ -429,9 +430,9 @@ app.post('/chat', async (req, res) => {
         });
       }
       
-      if (boxOpened && noteFound) {
+      if (gameState.boxOpened && gameState.noteFound) {
         return res.json({
-          message: `${playerName}님, 이미 상자를 확인했어요. 쪽지도 읽었구요. 다른 곳을 살펴볼까요?`,
+          message: `${gameState.playerName}님, 이미 상자를 확인했어요. 쪽지도 읽었구요. 다른 곳을 살펴볼까요?`,
           image: 'images/neutral.png',
           options: [
             { text: '선반 쪽을 확인한다', action: 'checkShelfArea' }
@@ -440,7 +441,7 @@ app.post('/chat', async (req, res) => {
       }
       
       return res.json({
-        message: `${playerName}님, 작은 나무 상자예요. 이 상자를 열어볼까요?`,
+        message: `${gameState.playerName}님, 작은 나무 상자예요. 이 상자를 열어볼까요?`,
         image: 'images/sup.gif',
         options: [
           { text: '상자를 열어보자', action: 'openBox' },
@@ -451,18 +452,18 @@ app.post('/chat', async (req, res) => {
 
     // 🔥 선반 쪽 확인 선택
     if (userMessage === 'checkShelfArea') {
-      shelfAreaChecked = true;
-      shelfChecked = true;
+      gameState.shelfAreaChecked = true;
+      gameState.shelfChecked = true;
       
-      if (!keyFound) {
-        keyFound = true;
+      if (!gameState.keyFound) {
+        gameState.keyFound = true;
         return res.json({ 
-          message: `${playerName}님, 먼지를 치우니 열쇠가 나왔어요... 이걸로 문을 열 수 있을까요?`,
+          message: `${gameState.playerName}님, 먼지를 치우니 열쇠가 나왔어요... 이걸로 문을 열 수 있을까요?`,
           image: 'images/hap.png' 
         });
       } else {
         return res.json({ 
-          message: `${playerName}님, 선반을 다시 살펴봤지만 특별한 건 없어요...`,
+          message: `${gameState.playerName}님, 선반을 다시 살펴봤지만 특별한 건 없어요...`,
           image: 'images/sad.png' 
         });
       }
@@ -470,17 +471,17 @@ app.post('/chat', async (req, res) => {
 
     // 🔥 상자 열기 선택
     if (userMessage === 'openBox') {
-      if (!boxOpened) {
-        boxOpened = true;
-        boxDeclined = false;
-        noteFound = true;
+      if (!gameState.boxOpened) {
+        gameState.boxOpened = true;
+        gameState.boxDeclined = false;
+        gameState.noteFound = true;
         
         // 선반쪽을 아직 확인하지 않았다면 선택지 제공
-        if (!shelfAreaChecked) {
+        if (!gameState.shelfAreaChecked) {
           return res.json({
             message: [
-              { type: 'steve', text: `${playerName}님, 상자를 열었어요... 빵과 물이 들어있어요. 그리고... 쪽지도 있네요.` },
-              { type: 'narration', text: "쪽지에는 '맞아'라고 인정했을 때, 우린 모든 진실을 알 수 있을 거예요. 라고 적혀 있습니다." }
+              { type: 'steve', text: `${gameState.playerName}님, 상자를 열었어요... 빵과 물이 들어있어요. 그리고... 쪽지도 있네요.` },
+              { type: 'narration', text: "쪽지에는 '맞아'라고 인정했을 때, 우린 모든 진실을 알 수 있을 거예요. 라고 쓰여 있습니다." }
             ],
             image: 'images/hap.gif',
             options: [
@@ -490,17 +491,17 @@ app.post('/chat', async (req, res) => {
         } else {
           return res.json({
             message: [
-              { type: 'steve', text: `${playerName}님, 상자를 열었어요... 빵과 물이 들어있어요. 그리고... 쪽지도 있네요.` },
-              { type: 'narration', text: "쪽지에는 '맞아'라고 인정했을 때, 우린 모든 진실을 알 수 있을 거예요. 라고 적혀 있습니다." }
+              { type: 'steve', text: `${gameState.playerName}님, 상자를 열었어요... 빵과 물이 들어있어요. 그리고... 쪽지도 있네요.` },
+              { type: 'narration', text: "쪽지에는 '맞아'라고 인정했을 때, 우린 모든 진실을 알 수 있을 거예요. 라고 쓰여 있습니다." }
             ],
             image: 'images/hap.gif'
           });
         }
       } else {
         return res.json({
-          message: `${playerName}님, 이미 확인했어요. 다른 곳을 살펴볼까요?`,
+          message: `${gameState.playerName}님, 이미 확인했어요. 다른 곳을 살펴볼까요?`,
           image: 'images/neutral.png',
-          options: !shelfAreaChecked ? [
+          options: !gameState.shelfAreaChecked ? [
             { text: '선반 쪽을 확인한다', action: 'checkShelfArea' }
           ] : []
         });
@@ -509,11 +510,11 @@ app.post('/chat', async (req, res) => {
 
     // 🔥 상자 열지 않기 선택
     if (userMessage === 'dontOpenBox') {
-      boxDeclined = true;
-      boxBlocked = true; // 앞으로 상자 접근을 막음
+      gameState.boxDeclined = true;
+      gameState.boxBlocked = true; // 앞으로 상자 접근을 막음
       
       return res.json({
-        message: `${playerName}님, 알겠어요. 그럼 선반 쪽으로 살펴볼까요?`,
+        message: `${gameState.playerName}님, 알겠어요. 그럼 선반 쪽으로 살펴볼까요?`,
         image: 'images/neutral.png',
         options: [
           { text: '선반 쪽을 확인한다', action: 'checkShelfArea' }
@@ -521,22 +522,22 @@ app.post('/chat', async (req, res) => {
       });
     }
 
-    // 🔥 상자 재언급 시 차단
-    if (boxBlocked && userMessage.includes('상자')) {
+    // 🔥 상자 재언급 시 차단 (boxBlocked가 true일 때만)
+    if (gameState.boxBlocked && userMessage.includes('상자')) {
       return res.json({
-        message: `${playerName}님, 상자를 다시는 열지 않기로 했잖아요... 다른 걸 살펴봐요.`,
+        message: `${gameState.playerName}님, 상자를 다시는 열지 않기로 했잖아요... 다른 걸 살펴봐요.`,
         image: 'images/sad.gif'
       });
     }
 
     // 문 열기 로직
     if (userMessage.includes('열쇠') && userMessage.includes('문') && userMessage.includes('열자')) {
-      if (keyFound) {
-        secondRoomEntered = true;
+      if (gameState.keyFound) {
+        gameState.secondRoomEntered = true;
         return res.json({
           "message": [
             { "type": "narration", "text": "문이 열렸습니다. 다음 방으로 이동합니다." },
-            { "type": "user", "text": `스티브: ${playerName}님, 문이 열렸어요... 다음 방에 도착했어요..!` }
+            { "type": "user", "text": `스티브: ${gameState.playerName}님, 문이 열렸어요... 다음 방에 도착했어요..!` }
           ],
           "image": "images/hap.png",
           "clear": true
@@ -545,26 +546,15 @@ app.post('/chat', async (req, res) => {
     }
 
     if (userMessage.includes('문') && userMessage.includes('열')) {
-      if (keyFound) {
-        secondRoomEntered = true;
+      if (gameState.keyFound) {
+        gameState.secondRoomEntered = true;
         return res.json({
           "message": [
             { "type": "narration", "text": "문이 열렸습니다. 다음 방으로 이동합니다." },
-            { "type": "user", "text": `스티브: ${playerName}님, 문이 열렸어요... 다음 방에 도착했어요..!` }
+            { "type": "user", "text": `스티브: ${gameState.playerName}님, 문이 열렸어요... 다음 방에 도착했어요..!` }
           ],
           "image": "images/hap.png",
           "clear": true
-        });
-      }
-    }
-
-    if (userMessage.includes('열쇠로 문을 열어')) {
-      if (keyFound) {
-        secondRoomEntered = true;
-        return res.json({
-          message: `${playerName}님, 문이 열린 것 같아요. 한 번 넘어가볼게요... 탈출이 눈 앞이네요!`,
-          image: "images/hap.png",
-          clear: true
         });
       }
     }
