@@ -44,7 +44,7 @@ h1, h2, h3 {
       box-shadow: 0 0 15px #0ff;
       width: 80%;
       max-width: 1200px;
-      height: 80%;
+      height: 55%;
       text-align: left;
     }
 
@@ -1205,6 +1205,13 @@ function showOverlayAndButton(chapterNumber) {
         const name = encodeURIComponent(getPlayerName());
         window.location.href = `https://test-room-1-9sdc.onrender.com/?playerName=${name}`;
     });
+
+        const nextChapterBtn = document.getElementById("next-chapter-btn");
+        if (nextChapterBtn) {
+            nextChapterBtn.addEventListener("click", () => {
+                switchChapter(nextChapterNumber);
+            });
+        }
 
         const gameOverRetryBtn = document.getElementById('game-over-retry-btn');
         if (gameOverRetryBtn) {
