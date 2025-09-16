@@ -60,6 +60,9 @@ let wallMessageShown = false;
 let currentSequence = [];
 let chatHistory = [];
 let computerMessageShown = false;
+let frameChecked = false;
+let bookshelfChecked = false;
+let explorationStarted = false;
 
 // 🔥 systemPrompt를 함수로 만들어서 최신 playerName 사용
 function createSystemPrompt() {
@@ -280,6 +283,9 @@ app.post('/chat', async (req, res) => {
       wallMessageShown = false;
       currentSequence = [];
       computerMessageShown = false;
+      frameChecked = false;
+      bookshelfChecked = false;
+      explorationStarted = false;
       console.log(`[Server2] 게임 상태 리셋됨`);
       return res.json({ 
         message: '게임이 초기화되었습니다.', 
@@ -352,61 +358,144 @@ ps.긍정으로 대답하는 것은 진실로 이끌어낼지도 몰라요.
     }
 
     // 주변 탐색
-    if (userMessage.includes('주변') || userMessage.includes('뭐') || 
-        userMessage.includes('보여') || userMessage.includes('살펴') ||
-        userMessage.includes('둘러')) {
+    if (userMessage.includes('주변') || userMessage.includes('둘러') || 
+        userMessage.includes('살펴') || userMessage.includes('확인') ||
+        userMessage.includes('보여')) {
+      
+      if (!explorationStarted) {
+        explorationStarted = true;
+        return res.json({ 
+          message: `${effectiveName}님, 액자 중심으로 왼쪽에는 책장이 있어요. 엄청 많은 책들이 있네요... 그리고 벽에 액자도 걸려있어요.`,
+          image: 'Save-steve.gif',
+          options: [
+            { text: '액자 쪽을 확인한다', action: 'check_frame' },
+            { text: '책장 쪽을 확인한다', action: 'check_bookshelf' }
+          ]
+        });
+      }
       
       return res.json({ 
-        message: `${effectiveName}님, 액자 중심으로 왼쪽에는 책장이 있어요. 엄청 많은 책들이 있네요... 그리고 벽에 액자도 걸려있어요.`,
-        image: 'Save-steve.gif'
+        message: `${effectiveName}님, 어디를 확인해볼까요?`,
+        image: 'Save-steve.gif',
+        options: [
+          { text: '액자 쪽을 확인한다', action: 'check_frame' },
+          { text: '책장 쪽을 확인한다', action: 'check_bookshelf' }
+        ]
       });
     }
 
-    // 액자 관련 처리
+        // 선택지 액션 처리
+    if (userMessage.startsWith('check_')) {
+      const action = userMessage.replace('check_', '');
+      
+      if (action === 'frame') {
+        frameChecked = true;
+        return res.json({
+          message: [
+            {
+              type: 'steve',
+              text: `${effectiveName}님, 액자에는 아름다운 풍경화가 그려져 있어요. 산과 강이 있는 평화로운 그림이네요. 그런데 액자가 조금 기울어져 있는 것 같아요... 내려놓아볼까요?`
+            },
+            {
+              type: 'narration',
+              text: `'액자를 내려줘' 라고 해보세요.`
+            }
+          ],
+          image: 'images/sup.gif'
+        });
+      }
+      
+      if (action === 'bookshelf') {
+        bookshelfChecked = true;
+        if (!frameChecked) {
+          return res.json({
+            message: `${effectiveName}님, 주변에 책이 떨어져 있네요. 여러 색이 있는데, 어떻게 넣어봐야할지는 모르겠어요. 책장 뒤에 있는 줄이 액자 쪽으로 연결 되어 있는 것 같은데 이쪽부터 확인해볼까요?`,
+            image: 'Save-steve.gif',
+            options: [
+              { text: '액자 쪽을 확인한다', action: 'check_frame' }
+            ]
+          });
+        } else {
+          return res.json({
+            message: `${effectiveName}님, 책장을 보니 위에는 2개를 꽂을 수 있고 중간에는 1개 맨 밑에는 3개를 꽂을 수 있어요. 바닥에 흰색, 노란색, 초록색, 빨간색, 파란색 책이 떨어져 있네요!`,
+            image: 'Save-steve.gif'
+          });
+        }
+      }
+    }
+
+ // 액자 관련 처리
     if (userMessage.includes('액자') || userMessage.includes('그림')) {
+      
+      if (!frameChecked) {
+        return res.json({
+          message: `${effectiveName}님, 먼저 주변을 탐색해서 액자를 확인해보세요.`,
+          image: 'Save-steve.gif',
+          options: [
+            { text: '액자 쪽을 확인한다', action: 'check_frame' },
+            { text: '책장 쪽을 확인한다', action: 'check_bookshelf' }
+          ]
+        });
+      }
       
       if (pictureMoved) {
         return res.json({
           message: `${effectiveName}님, 그 액자는 이미 내려가 있어요! 뒤에 금고가 있었죠.`,
           image: 'images/hap.gif'
         });
-      } else {
+      } else if (frameChecked) {
         return res.json({
-          message: `${effectiveName}님, 액자에는 아름다운 풍경화가 그려져 있어요. 산과 강이 있는 평화로운 그림이네요. 그런데 액자가 조금 기울어져 있는 것 같아요... 내려놓을까요?`,
+          message: `${effectiveName}님, 액자에는 아름다운 풍경화가 그려져 있어요. 산과 강이 있는 평화로운 그림이네요. 그런데 액자가 조금 기울어져 있는 것 같아요... '액자를 내려줘'라고 말해보세요.`,
           image: 'images/sup.gif'
         });
       }
     }
 
-    // 액자 내리기
-    if (userMessage.includes('내려') && !pictureMoved) {
-      pictureMoved = true;
-      wallMessageShown = true;
+     // 액자 내리기
+    if ((userMessage.includes('액자') && userMessage.includes('내려')) || 
+        (userMessage.includes('액자를 내려') || userMessage.includes('내려줘'))) {
       
-      return res.json({
-        message: [
-          {
-            type: 'steve',
-            text: `${effectiveName}님, 뒤에 금고를 발견했어요! 버튼과 연결되어 있는 것 같아요...`
-          },
-          {
-            type: 'steve',
-            text: `${effectiveName}님, 벽에 글자가 새겨져 있네요!`
-          },
-          {
-            type: 'narration',
-            text: `첫 감정은 찬란했다.
+      if (!frameChecked) {
+        return res.json({
+          message: `${effectiveName}님, 어떤 액자를 말씀하시는 건가요? 먼저 주변을 살펴보세요.`,
+          image: 'images/sup.gif'
+        });
+      }
+      
+      if (!pictureMoved) {
+        pictureMoved = true;
+        wallMessageShown = true;
+        
+        return res.json({
+          message: [
+            {
+              type: 'steve',
+              text: `${effectiveName}님, 뒤에 금고를 발견했어요! 버튼과 연결되어 있는 것 같아요...`
+            },
+            {
+              type: 'steve',
+              text: `${effectiveName}님, 벽에 글자가 새겨져 있네요!`
+            },
+            {
+              type: 'narration',
+              text: `첫 감정은 찬란했다.
 모서리는 익숙함을 갈망했고,
 시간의 흐름은 반복을 품었으며,
 끝은 언제나 선택을 요구했다.`
-          },
-          {
-            type: 'steve',
-            text: `이제 버튼을 눌러볼 수 있을 것 같아요!`
-          }
-        ],
-        image: 'images/hap.gif'
-      });
+            },
+            {
+              type: 'steve',
+              text: `이제 버튼을 눌러볼 수 있을 것 같아요, 버튼을 눌러볼까요?`
+            }
+          ],
+          image: 'images/hap.gif'
+        });
+      } else {
+        return res.json({
+          message: `${effectiveName}님, 그 액자는 이미 내려가 있어요! 뒤에 금고가 있었죠.`,
+          image: 'images/hap.gif'
+        });
+      }
     }
 
     // 버튼 관련
@@ -569,12 +658,21 @@ ps.긍정으로 대답하는 것은 진실로 이끌어낼지도 몰라요.
 
     // 책장 관련 키워드
     if (userMessage.includes('책장') || userMessage.includes('책들') || 
-        userMessage.includes('도서') || userMessage.includes('서점')) {
+        userMessage.includes('도서') || userMessage.includes('서적')) {
       
-      if (safeOpened) {
+      if (safeOpened && bookshelfChecked) {
         return res.json({
           message: `${effectiveName}님, 책장을 보니 위에는 2개, 중간에는 1개, 맨 밑에는 3개를 꽂을 수 있어요. 바닥에 흰색, 노란색, 초록색, 빨간색, 파란색 책이 떨어져 있네요!`,
           image: 'Save-steve.gif'
+        });
+      } else if (!bookshelfChecked) {
+        return res.json({
+          message: `${effectiveName}님, 먼저 주변을 탐색해서 책장 쪽을 확인해보세요.`,
+          image: 'Save-steve.gif',
+          options: [
+            { text: '액자 쪽을 확인한다', action: 'check_frame' },
+            { text: '책장 쪽을 확인한다', action: 'check_bookshelf' }
+          ]
         });
       } else {
         return res.json({
