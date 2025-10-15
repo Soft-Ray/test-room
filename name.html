@@ -3,9 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <!-- 폰트 미리 로드 -->
   <link rel="preload" href="https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2107@1.1/NeoDunggeunmo.woff" as="font" type="font/woff" crossorigin>
-  
   <title>이름 입력 화면</title>
   <style>
     @font-face {
@@ -13,14 +11,13 @@
       src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2107@1.1/NeoDunggeunmo.woff') format('woff');
       font-weight: normal;
       font-style: normal;
-      font-display: swap; /* 폰트 로딩 중에도 텍스트가 보이도록 */
+      font-display: swap;
     }
-        
+
     * {
       font-family: 'NeoDunggeunmo', 'Courier New', 'Malgun Gothic', '맑은 고딕', monospace, sans-serif;
-      /* fallback 폰트들: 픽셀폰트와 비슷한 느낌의 폰트들을 순서대로 지정 */
     }
-        
+
     body {
       margin: 0;
       padding: 0;
@@ -28,23 +25,12 @@
       justify-content: center;
       align-items: center;
       height: 100vh;
-      overflow: hidden;
       background-color: black;
-    }
-        
-    .name-input-container {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background-color: rgba(0, 0, 0, 1);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      z-index: 101;
       color: white;
+    }
+
+    .name-input-container {
+      text-align: center;
       font-size: 2vw;
     }
 
@@ -52,18 +38,23 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 10px;
       margin-top: 10px;
+      width: 100%;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
     }
-        
+
     .name-input-container input {
       padding: 10px;
       font-size: 1.2vw;
       border-radius: 5px;
       border: none;
-      margin-right: 10px;
       min-width: 200px;
+      flex: 1;
     }
-        
+
     .name-submit-btn {
       padding: 10px 20px;
       font-size: 1.2vw;
@@ -91,23 +82,20 @@
       color: #ccc;
     }
 
-    /* 진행바를 입력 필드와 버튼의 전체 너비에 맞춤 */
-    .cat-loading-container {
-      margin-top: 30px;
+    /* 로딩바 */
+    .loading-bar-container {
+      margin-top: 10px;
       height: 30px;
       position: relative;
       display: none;
-      /* 입력 그룹과 같은 너비로 설정 */
       width: 100%;
-      max-width: 400px; /* 최대 너비 제한 */
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
     }
 
     .progress-bar-container {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      left: 0;
-      right: 0;
+      width: 100%;
       height: 4px;
       background: #333;
       border-radius: 2px;
@@ -116,65 +104,17 @@
 
     .progress-bar {
       height: 100%;
-      background: #ffcc00;
+      background: #00eeff;
       width: 0%;
       transition: width 0.3s ease;
       border-radius: 2px;
     }
 
     .progress-text {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      right: 0;
-      color: #ccc;
+      text-align: right;
+      margin-top: 5px;
       font-size: 12px;
-      margin-top: 8px;
-    }
-
-    .server-indicators {
-      display: none;
-    }
-
-    .server-indicator {
-      display: none;
-    }
-
-    .server-dot {
-      display: none;
-    }
-
-    .server-dot.connecting {
-      background: #ffcc00;
-      animation: pulse 1s infinite;
-    }
-
-    .server-dot.success {
-      background: #90EE90;
-    }
-
-    .server-dot.failed {
-      background: #ff4444;
-    }
-
-    @keyframes pulse {
-      0%, 100% {
-        opacity: 1;
-      }
-      50% {
-        opacity: 0.5;
-      }
-    }
-
-    .completion-message {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      color: #90EE90;
-      font-size: 14px;
-      opacity: 0;
-      transition: opacity 0.3s;
+      color: #ccc;
     }
   </style>
 </head>
@@ -182,19 +122,17 @@
   <div class="name-input-container" id="name-input-container">
     <div>
       <label for="name">이름을 입력해주세요</label>
-      <br>
-      <br>
+      <br><br>
       <div class="input-group">
         <input type="text" id="name" placeholder="이름 입력" />
         <button class="name-submit-btn" id="name-submit-btn">확인</button>
       </div>
       <div class="loading" id="loading" style="display: none;">
-        이름을 모든 서버에 전송 중...
+        서버 연결 중...
       </div>
       <div class="status" id="status"></div>
-      
-      <!-- 진행바 -->
-      <div class="cat-loading-container" id="cat-loading-container">
+
+      <div class="loading-bar-container" id="loading-bar-container">
         <div class="progress-bar-container">
           <div class="progress-bar" id="progress-bar"></div>
         </div>
@@ -202,311 +140,155 @@
       </div>
     </div>
   </div>
-  
+
 <script>
-    const nameSubmitBtn = document.getElementById('name-submit-btn');
-    const nameInput = document.getElementById('name');
-    const nameInputContainer = document.getElementById('name-input-container');
-    const loading = document.getElementById('loading');
-    const status = document.getElementById('status');
-    const catLoadingContainer = document.getElementById('cat-loading-container');
-    const progressBar = document.getElementById('progress-bar');
-    const progressText = document.getElementById('progress-text');
-    
-    // 메모리에 이름 저장 (localStorage 대신)
-    let savedPlayerName = '플레이어';
-    
-    // 심플한 진행바 업데이트
-    function updateProgressBar(progress) {
-      progressBar.style.width = `${progress}%`;
-      progressText.textContent = `${Math.round(progress)}%`;
-    }
-    
-    function showCompletionMessage() {
-      completionMessage.style.opacity = '1';
-      setTimeout(() => {
-        completionMessage.style.opacity = '0';
-      }, 2000);
-    }
-        
-    // 모든 서버에 이름을 전송하는 함수 - 개선된 버전
-    async function sendNameToAllServers(name) {
-      console.log(`🚀 모든 서버에 이름 전송 시작: "${name}"`);
-      
-      const servers = [
-        { url: 'https://test-room-o4yh.onrender.com/set-name', name: 'Server 1 (Chapter 1)' },
-        { url: 'https://test-room-1-9sdc.onrender.com/set-name', name: 'Server 2 (Chapter 2)' },
-        { url: 'https://test-room-2.onrender.com/set-name', name: 'Server 3 (Chapter 3)' }
-      ];
+  const nameSubmitBtn = document.getElementById('name-submit-btn');
+  const nameInput = document.getElementById('name');
+  const loading = document.getElementById('loading');
+  const status = document.getElementById('status');
+  const loadingBarContainer = document.getElementById('loading-bar-container');
+  const progressBar = document.getElementById('progress-bar');
+  const progressText = document.getElementById('progress-text');
 
-      const results = [];
-      const totalServers = servers.length;
-      
-      for (let i = 0; i < servers.length; i++) {
-        const server = servers[i];
-        const progress = (i / totalServers) * 100;
-        
-        try {
-          console.log(`📤 ${server.name}에 이름 전송 중: "${name}"`);
-          status.textContent = `${server.name}에 전송 중...`;
-          
-          // 진행바 업데이트
-          updateProgressBar(progress);
-          
-          const response = await fetch(server.url, {
-            method: 'POST',
-            headers: { 
-              'Content-Type': 'application/json',
-              'Cache-Control': 'no-cache'
-            },
-            body: JSON.stringify({ name: name })
-          });
+  let savedPlayerName = '플레이어';
 
-          if (response.ok) {
-            const data = await response.json();
-            console.log(`✅ ${server.name} 성공:`, data);
-            results.push({ server: server.name, success: true, data });
-          } else {
-            console.log(`❌ ${server.name} 실패: ${response.status}`);
-            results.push({ server: server.name, success: false, error: `HTTP ${response.status}` });
-          }
-        } catch (error) {
-          console.log(`❌ ${server.name} 연결 오류:`, error.message);
-          results.push({ server: server.name, success: false, error: error.message });
-        }
-        
-        // 각 서버 요청 사이에 잠시 대기 (애니메이션 효과를 위해)
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
+  // ✅ 로딩 문구 순환
+  const loadingMessages = [
+    "이름을 각 챕터에 전송하고 있습니다...",
+    "스티브와 연결을 시도하고 있습니다...",
+    "서버 응답을 대기하고 있습니다...",
+    "조금만 기다려주세요...",
+    "마지막 데이터 확인 중..."
+  ];
 
-      // 최종 완료
-      updateProgressBar(100);
+  let loadingMessageIndex = 0;
+  let loadingInterval;
 
-      return results;
-    }
+  function startLoadingMessages() {
+    loading.style.display = 'block';
+    loading.textContent = loadingMessages[loadingMessageIndex];
+    loadingInterval = setInterval(() => {
+      loadingMessageIndex = (loadingMessageIndex + 1) % loadingMessages.length;
+      loading.textContent = loadingMessages[loadingMessageIndex];
+    }, 2000);
+  }
 
-    // 추가: 서버 동기화 함수
-    async function syncNameToAllServers(name) {
-      console.log(`🔄 모든 서버에 이름 동기화: "${name}"`);
-      
-      const servers = [
-        { url: 'https://test-room-o4yh.onrender.com/sync-name', name: 'Server 1' },
-        { url: 'https://test-room-1-9sdc.onrender.com/sync-name', name: 'Server 2' },
-        { url: 'https://test-room-2.onrender.com/sync-name', name: 'Server 3' }
-      ];
+  function stopLoadingMessages() {
+    clearInterval(loadingInterval);
+    loading.style.display = 'none';
+  }
 
-      const syncPromises = servers.map(server => 
-        fetch(server.url, {
+  function updateProgressBar(progress) {
+    progressBar.style.width = `${progress}%`;
+    progressText.textContent = `${Math.round(progress)}%`;
+  }
+
+  async function sendNameToAllServers(name) {
+    const servers = [
+      { url: 'https://test-room-o4yh.onrender.com/set-name', name: 'Server 1' },
+      { url: 'https://test-room-1-9sdc.onrender.com/set-name', name: 'Server 2' },
+      { url: 'https://test-room-2.onrender.com/set-name', name: 'Server 3' }
+    ];
+
+    const results = [];
+    const totalServers = servers.length;
+
+    for (let i = 0; i < servers.length; i++) {
+      const server = servers[i];
+      const progress = (i / totalServers) * 100;
+
+      try {
+        status.textContent = `${server.name}에 전송 중...`;
+        updateProgressBar(progress);
+        const response = await fetch(server.url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: name })
-        }).then(response => {
-          if (response.ok) {
-            console.log(`✅ ${server.name} 동기화 성공`);
-          } else {
-            console.log(`❌ ${server.name} 동기화 실패`);
-          }
-        }).catch(error => {
-          console.log(`❌ ${server.name} 동기화 오류:`, error.message);
-        })
-      );
+        });
 
-      await Promise.allSettled(syncPromises);
-    }
-
-    nameSubmitBtn.addEventListener('click', async () => {
-      const name = nameInput.value.trim();
-      if (!name || name === '플레이어') {
-        alert('유효한 이름을 입력해주세요.');
-        return;
-      }
-
-      // UI 상태 변경
-      nameSubmitBtn.disabled = true;
-      nameSubmitBtn.textContent = '전송 중...';
-      loading.style.display = 'block';
-      catLoadingContainer.style.display = 'block'; // 진행바 표시
-
-      try {
-        console.log(`🚀 이름 전송 프로세스 시작: "${name}"`);
-        
-        // 메모리에 이름 저장
-        savedPlayerName = name;
-        console.log(`💾 메모리에 이름 저장됨: "${savedPlayerName}"`);
-        
-        // 모든 서버에 이름 전송 (고양이 애니메이션과 함께)
-        const results = await sendNameToAllServers(name);
-        
-        // 동기화도 실행
-        await syncNameToAllServers(name);
-        
-        // 결과 확인
-        const successCount = results.filter(r => r.success).length;
-        const failCount = results.filter(r => !r.success).length;
-        
-        console.log(`📊 전송 결과 - 성공: ${successCount}, 실패: ${failCount}`);
-        
-        if (successCount > 0) {
-          status.textContent = `${successCount}개 서버에 성공적으로 전송됨`;
-          status.style.color = '#90EE90';
-          
-          // 이름을 URL 파라미터로 전달하여 메인 게임으로 이동
-          setTimeout(() => {
-            console.log(`🎮 메인 게임으로 이동 - 이름: "${name}"`);
-            window.location.href = `https://test-room-o4yh.onrender.com?playerName=${encodeURIComponent(name)}`;
-          }, 2000);
-          
+        if (response.ok) {
+          results.push({ server: server.name, success: true });
         } else {
-          // 모든 서버 전송이 실패한 경우에도 게임 시작
-          status.textContent = '서버 연결 실패했지만 게임을 시작합니다.';
-          status.style.color = '#FFB6C1';
-          
-          setTimeout(() => {
-            console.log(`🎮 메인 게임으로 이동 (서버 실패) - 이름: "${name}"`);
-            window.location.href = `https://test-room-o4yh.onrender.com?playerName=${encodeURIComponent(name)}`;
-          }, 2500);
+          results.push({ server: server.name, success: false });
         }
-        
-      } catch (error) {
-        console.error('❌ 전체 프로세스 오류:', error);
-        status.textContent = '오류 발생했지만 게임을 시작합니다.';
-        status.style.color = '#FFB6C1';
-        
-        setTimeout(() => {
-          console.log(`🎮 메인 게임으로 이동 (오류 발생) - 이름: "${nameInput.value.trim()}"`);
-          window.location.href = `https://test-room-o4yh.onrender.com?playerName=${encodeURIComponent(nameInput.value.trim())}`;
-        }, 2500);
-      } finally {
-        // UI 상태 복구는 페이지 이동 전까지만
-        setTimeout(() => {
-          nameSubmitBtn.disabled = false;
-          nameSubmitBtn.textContent = '확인';
-          loading.style.display = 'none';
-          catLoadingContainer.style.display = 'none';
-        }, 5001);
+      } catch {
+        results.push({ server: server.name, success: false });
       }
-    });
-        
-    nameInput.addEventListener('keypress', (event) => {
-      if (event.key === 'Enter' && !nameSubmitBtn.disabled) {
-        nameSubmitBtn.click();
-      }
-    });
-
-    // 페이지 로드 시 이름 처리 개선
-    window.addEventListener('load', () => {
-      console.log('📄 페이지 로드됨');
-      
-      // URL 파라미터에서 이름 가져오기
-      const urlParams = new URLSearchParams(window.location.search);
-      const nameFromUrl = urlParams.get('playerName');
-      
-      let finalName = '';
-      
-      if (nameFromUrl && nameFromUrl !== 'playerName' && nameFromUrl.trim() !== '') {
-        finalName = decodeURIComponent(nameFromUrl);
-        savedPlayerName = finalName;
-        console.log(`💾 URL에서 이름 로드: "${finalName}"`);
-      } else if (savedPlayerName && savedPlayerName !== '플레이어') {
-        finalName = savedPlayerName;
-        console.log(`💾 메모리에서 이름 로드: "${finalName}"`);
-      }
-      
-      if (finalName) {
-        nameInput.value = finalName;
-        console.log(`📝 입력 필드에 이름 설정: "${finalName}"`);
-      }
-      
-      nameInput.focus(); // 입력 필드에 포커스
-    });
-
-    // 디버깅용: 모든 서버 상태 확인 함수
-    window.checkAllServerStatus = async function() {
-      console.log('🔍 모든 서버 상태 확인 시작');
-      
-      const servers = [
-        'https://test-room-o4yh.onrender.com/status',
-        'https://test-room-1-9sdc.onrender.com/status', 
-        'https://test-room-2.onrender.com/status'
-      ];
-      
-      for (const url of servers) {
-        try {
-          const response = await fetch(url);
-          if (response.ok) {
-            const data = await response.json();
-            console.log(`✅ ${url}:`, data);
-          } else {
-            console.log(`❌ ${url}: HTTP ${response.status}`);
-          }
-        } catch (error) {
-          console.log(`❌ ${url}: 연결 실패 - ${error.message}`);
-        }
-      }
-    };
-
-    // 디버깅용: 이름 강제 동기화 함수
-    window.forceSyncName = async function(name) {
-      if (!name) {
-        name = nameInput.value.trim() || savedPlayerName;
-      }
-      console.log(`🔧 강제 이름 동기화: "${name}"`);
-      await syncNameToAllServers(name);
-    };
-
-    // 글로벌 함수로 이름 접근 가능하게 만들기
-    window.getPlayerName = function() {
-      return savedPlayerName;
-    };
-
-    window.setPlayerName = function(name) {
-      if (name && name.trim() !== '') {
-        savedPlayerName = name.trim();
-        nameInput.value = savedPlayerName;
-        console.log(`📝 이름 수동 설정: "${savedPlayerName}"`);
-        return true;
-      }
-      return false;
-    };
-
-    // 초기화 함수
-    window.initializeName = function() {
-      console.log(`📄 이름 초기화 - 현재 저장된 이름: "${savedPlayerName}"`);
-      if (savedPlayerName !== '플레이어') {
-        syncNameToAllServers(savedPlayerName);
-      }
-    };
-
-    // 진행바 테스트 함수
-    window.testProgressBar = function() {
-      catLoadingContainer.style.display = 'block';
-      let progress = 0;
-      
-      const interval = setInterval(() => {
-        updateProgressBar(progress);
-        progress += 2;
-        if (progress > 100) {
-          clearInterval(interval);
-          updateProgressBar(100);
-        }
-      }, 100);
-    };
-
-    console.log('📋 스크립트 로드 완료');
-    
-    // 폰트 로딩 확인
-    if (document.fonts) {
-      document.fonts.ready.then(() => {
-        console.log('✅ 모든 폰트 로딩 완료');
-      });
-      
-      // 특정 폰트가 로드되었는지 확인
-      document.fonts.load('16px NeoDunggeunmo').then(() => {
-        console.log('✅ NeoDunggeunmo 폰트 로딩 완료');
-      }).catch(() => {
-        console.log('⚠️ NeoDunggeunmo 폰트 로딩 실패 - fallback 폰트 사용');
-      });
+      await new Promise(res => setTimeout(res, 500));
     }
-  </script>
+
+    updateProgressBar(100);
+    return results;
+  }
+
+  async function syncNameToAllServers(name) {
+    const servers = [
+      'https://test-room-o4yh.onrender.com/sync-name',
+      'https://test-room-1-9sdc.onrender.com/sync-name',
+      'https://test-room-2.onrender.com/sync-name'
+    ];
+
+    await Promise.allSettled(servers.map(url =>
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      })
+    ));
+  }
+
+  nameSubmitBtn.addEventListener('click', async () => {
+    const name = nameInput.value.trim();
+    if (!name || name === '플레이어') {
+      alert('유효한 이름을 입력해주세요.');
+      return;
+    }
+
+    nameSubmitBtn.disabled = true;
+    nameSubmitBtn.textContent = '전송 중...';
+    startLoadingMessages();
+    loadingBarContainer.style.display = 'block';
+
+    try {
+      savedPlayerName = name;
+      const results = await sendNameToAllServers(name);
+      await syncNameToAllServers(name);
+
+      const successCount = results.filter(r => r.success).length;
+
+      if (successCount > 0) {
+        status.textContent = `${successCount}개 서버에 성공적으로 전송됨`;
+        status.style.color = '#90EE90';
+      } else {
+        status.textContent = '서버 연결 실패했지만 게임을 시작합니다.';
+        status.style.color = '#FFB6C1';
+      }
+
+      setTimeout(() => {
+        window.location.href = `https://test-room-o4yh.onrender.com?playerName=${encodeURIComponent(name)}`;
+      }, 2000);
+
+    } catch (e) {
+      status.textContent = '오류 발생했지만 게임을 시작합니다.';
+      status.style.color = '#FFB6C1';
+      setTimeout(() => {
+        window.location.href = `https://test-room-o4yh.onrender.com?playerName=${encodeURIComponent(name)}`;
+      }, 2000);
+    } finally {
+      stopLoadingMessages();
+      setTimeout(() => {
+        loadingBarContainer.style.display = 'none';
+        nameSubmitBtn.disabled = false;
+        nameSubmitBtn.textContent = '확인';
+      }, 5000);
+    }
+  });
+
+  nameInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' && !nameSubmitBtn.disabled) {
+      nameSubmitBtn.click();
+    }
+  });
+</script>
 </body>
 </html>
