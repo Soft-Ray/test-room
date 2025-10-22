@@ -116,6 +116,20 @@
       font-size: 12px;
       color: #ccc;
     }
+
+    /* ✅ sup.gif 스타일 추가 */
+    .sup-gif {
+      display: none;
+      width: 60%;
+      max-width: 250px;/* 로딩 바와 동일한 폭 */
+      margin: 15px auto 0 auto;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+    }
+    .sup-gif.show {
+      display: block;
+      opacity: 1;
+    }
   </style>
 </head>
 <body>
@@ -137,6 +151,9 @@
           <div class="progress-bar" id="progress-bar"></div>
         </div>
         <div class="progress-text" id="progress-text">0%</div>
+
+        <!-- ✅ sup.gif 추가 -->
+        <img src="sup.gif" alt="로딩 이미지" id="sup-gif" class="sup-gif" />
       </div>
     </div>
   </div>
@@ -149,8 +166,10 @@
   const loadingBarContainer = document.getElementById('loading-bar-container');
   const progressBar = document.getElementById('progress-bar');
   const progressText = document.getElementById('progress-text');
+  const supGif = document.getElementById('sup-gif'); // ✅ 추가
 
   let savedPlayerName = '플레이어';
+  let supGifTimeout; // ✅ 타이머 변수
 
   // ✅ 로딩 문구 순환
   const loadingMessages = [
@@ -158,6 +177,9 @@
     "스티브와 연결을 시도하고 있습니다...",
     "서버 응답을 대기하고 있습니다...",
     "조금만 기다려주세요...",
+    "스티브와 연결을 시도하고 있습니다...",
+    "지금 스티브는 무엇을 하고 있을까요?",
+    "조금만 기다려주세요",
     "마지막 데이터 확인 중..."
   ];
 
@@ -170,12 +192,19 @@
     loadingInterval = setInterval(() => {
       loadingMessageIndex = (loadingMessageIndex + 1) % loadingMessages.length;
       loading.textContent = loadingMessages[loadingMessageIndex];
+    }, 3000);
+
+    // ✅ 2초 뒤 sup.gif 표시
+    supGifTimeout = setTimeout(() => {
+      supGif.classList.add('show');
     }, 2000);
   }
 
   function stopLoadingMessages() {
     clearInterval(loadingInterval);
+    clearTimeout(supGifTimeout);
     loading.style.display = 'none';
+    supGif.classList.remove('show');
   }
 
   function updateProgressBar(progress) {
