@@ -817,7 +817,7 @@ function showConfirmationButton(stage) {
               choiceButtons.style.display = 'none';
               
               // Show final image
-              mainGif.src = 'ㄹ.png';
+              mainGif.src = '끝.png';
               mainGif.style.display = 'block';
               mainGif.className = 'fullscreen';
               
@@ -916,20 +916,20 @@ function playVideoWithCaption(src, caption, isChoice3 = false) {
 
   if (isChoice3) {
     isChoice3Playing = true;
-    
-    // Choice 3 영상이 끝나면 바로 다음 장면으로 이동
-    video.onended = () => {
+  } else {
+    isChoice3Playing = false;
+  }
+
+  video.onended = () => {
+    if (isChoice3) {
+      // Choice 3 영상이 끝나면 바로 다음 장면으로 이동
       videoContainer.style.display = 'none';
       retryButton.style.display = 'none';
       mainGif.style.display = 'none';
-      captionBox.textContent = '';
       showSystemDeletionInput();
       isChoice3Playing = false;
-    };
-  } else {
-    isChoice3Playing = false;
-    video.onended = null;
-  }
+    }
+  };
 }
 
 const hoverText1 = '스티브를 자리를 대체하시겠습니까? 당신의 자유는 잃게될 거예요. 대신 용감한 당신은 미래를 위한 의미 있는 실험으로 남겠죠.';
