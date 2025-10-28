@@ -423,20 +423,20 @@ retryButton.addEventListener('click', () => {
   retryButton.style.display = 'none';
 
     // YouTube iframe 숨기기
-  youtubeVideo.style.display = 'none';
-  youtubeVideo.src = 'https://youtu.be/COlhuh0cFr0?si=X-Z-m0z1Qvpm_NSz';
-  
-  if (isChoice3Playing) {
-    // Choice 3 영상이 끝난 후에는 GIF를 숨기고 시스템 삭제 입력만 표시
-    mainGif.style.display = 'none'; // GIF 숨기기
-    showSystemDeletionInput();
-    isChoice3Playing = false;
-  } else {
-    // 다른 선택지의 경우 GIF 표시하고 선택 버튼들 표시
-    mainGif.style.display = 'block';
-    mainGif.src = 'Chp3.gif';
-    choiceButtons.style.display = 'flex';
-  }
+youtubeVideo.style.display = 'block'; // ← block으로 바꿔야 영상이 보여요
+youtubeVideo.src = 'https://www.youtube.com/embed/COlhuh0cFr0?autoplay=1'; // ← embed 주소 + autoplay 추가
+
+if (isChoice3Playing) {
+  // Choice 3 영상이 끝난 후에는 GIF를 숨기고 시스템 삭제 입력만 표시
+  mainGif.style.display = 'none'; // GIF 숨기기
+  showSystemDeletionInput();
+  isChoice3Playing = false;
+} else {
+  // 다른 선택지의 경우 GIF 표시하고 선택 버튼들 표시
+  mainGif.style.display = 'block';
+  mainGif.src = 'Chp3.gif';
+  choiceButtons.style.display = 'flex';
+}
 });
 
 function showImageSequence() {
