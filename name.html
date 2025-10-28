@@ -177,9 +177,13 @@
     "스티브와 연결을 시도하고 있습니다...",
     "서버 응답을 대기하고 있습니다...",
     "조금만 기다려주세요...",
-    "스티브와 연결을 시도하고 있습니다...",
+    "스티브는 당신이 누군지 알고 있을까요?...",
+    "당신의 질문에 따라 결과가 달라질지 몰라요...",
     "지금 스티브는 무엇을 하고 있을까요?",
-    "조금만 기다려주세요",
+    "긍정이 당신을 진실로 데려가줄지도 모르죠...",
+    "채팅이 시작되면, 스티브에게 인사를 해보세요",
+    "보다 정확한 요구는 스티브를 움직이게 만들거예요...",
+    "탈출이 꼭 필요할까요...?",
     "마지막 데이터 확인 중..."
   ];
 
@@ -192,7 +196,7 @@
     loadingInterval = setInterval(() => {
       loadingMessageIndex = (loadingMessageIndex + 1) % loadingMessages.length;
       loading.textContent = loadingMessages[loadingMessageIndex];
-    }, 3000);
+    }, 4000);
 
     // ✅ 2초 뒤 sup.gif 표시
     supGifTimeout = setTimeout(() => {
@@ -320,4 +324,5 @@
   });
 </script>
 </body>
+</html>
 </html>
