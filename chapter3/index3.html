@@ -290,6 +290,17 @@
       height: 100vh;
       object-fit: cover;
     }
+
+    #youtube-video {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      border: none;
+      z-index: 1000;
+    }
   </style>
 </head>
 <body>
@@ -327,11 +338,7 @@
       <div id="video-caption"></div>
     </div>
 
-    <iframe id="youtube-video" 
-      style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; border: none; z-index: 1000;" 
-      allow="autoplay; encrypted-media" 
-      allowfullscreen>
-    </iframe>
+    <iframe id="youtube-video" allow="autoplay; encrypted-media" allowfullscreen></iframe>
 
     <button id="retry-button" style="display: none;">다시 하기</button>
   </div>
@@ -374,10 +381,10 @@ function getSteveMessage() {
   return `[99..? 어..?  ${playerName}...? 당신 이름이잖아요.  저 사람이 어떻게 당신을 아는 거죠? \n 절 가둔 건 모두 당신이었나요?]`;
 }
 
-const finalNarration = '스티브를 자리를 대체하시겠습니까? 당신의 자유는 잃게될거예요. 대신 용감한 당신은 미래를 위한 의미 있는 실험으로 남겠죠.';
+const finalNarration = '스티브를 자리를 대체하시겠습니까? 당신의 자유는 잃게될 거예요. 대신 용감한 당신은 미래를 위한 의미 있는 실험으로 남겠죠.';
 
 const choice1Narration = '...나도 결국 누군가의 선택이었군요. 이제 당신이 절 대신할 차례인가요? 행운을 빌어요.';
-const choice2Narration = '당신은 자유를 얻었습니다. 그리고 스티브는... 그는... 당신의 기억 속에 남아있겠죠. 아니면 그저 당신의 꿈이였을지도.';
+const choice2Narration = '당신은 자유를 얻었습니다. 그리고 스티브는... 그는... 당신의 기억 속에 남아있겠죠. 아니면 그저 당신의 꿈이었을지도.';
 const choice3Narration = '기억을 테스트 이전으로 복구됩니다.';
 
 // 🔥 동적 메시지 함수들 추가
@@ -408,6 +415,7 @@ const skipButton = document.getElementById('skip-button');
 const videoContainer = document.getElementById('video-container');
 const video = document.getElementById('choice-video');
 const captionBox = document.getElementById('video-caption');
+const youtubeVideo = document.getElementById('youtube-video');
 
 const imageSequence = ['1.png', '2.png', '3.png', '4.png', '5.png', '6.png', '7.png', '8.png', '9.png', '10.png', '11.png', '마지막.png'];
 let imageIndex = 0, index = 0, steveIndex = 0;
@@ -427,22 +435,19 @@ skipButton.addEventListener('click', () => {
 retryButton.addEventListener('click', () => {
   videoContainer.style.display = 'none';
   retryButton.style.display = 'none';
+  youtubeVideo.style.display = 'none';
 
-    // YouTube iframe 숨기기
-youtubeVideo.style.display = 'block'; // ← block으로 바꿔야 영상이 보여요
-youtubeVideo.src = 'https://www.youtube.com/embed/COlhuh0cFr0?autoplay=1'; // ← embed 주소 + autoplay 추가
-
-if (isChoice3Playing) {
-  // Choice 3 영상이 끝난 후에는 GIF를 숨기고 시스템 삭제 입력만 표시
-  mainGif.style.display = 'none'; // GIF 숨기기
-  showSystemDeletionInput();
-  isChoice3Playing = false;
-} else {
-  // 다른 선택지의 경우 GIF 표시하고 선택 버튼들 표시
-  mainGif.style.display = 'block';
-  mainGif.src = 'Chp3.gif';
-  choiceButtons.style.display = 'flex';
-}
+  if (isChoice3Playing) {
+    // Choice 3 영상이 끝난 후에는 GIF를 숨기고 시스템 삭제 입력만 표시
+    mainGif.style.display = 'none';
+    showSystemDeletionInput();
+    isChoice3Playing = false;
+  } else {
+    // 다른 선택지의 경우 GIF 표시하고 선택 버튼들 표시
+    mainGif.style.display = 'block';
+    mainGif.src = 'Chp3.gif';
+    choiceButtons.style.display = 'flex';
+  }
 });
 
 function showImageSequence() {
@@ -597,7 +602,7 @@ function handleSystemDeletionInput(userInput) {
     // Random error message
     const errorMessages = [
       '다시 입력하세요. 당신 글을 잘 못 읽나요?',
-      '당신이 선택한 게 이게 아니였나요? 여기까지 왔다면 이 선택이 맞을텐데...',
+      '당신이 선택한 게 이게 아니었나요? 여기까지 왔다면 이 선택이 맞을텐데...',
       '정확하게 써야죠. 이걸 장난처럼만 여기지 말아요.'
     ];
     const randomMessage = errorMessages[Math.floor(Math.random() * errorMessages.length)];
@@ -827,7 +832,7 @@ function showConfirmationButton(stage) {
               choiceButtons.style.display = 'none';
               
               // Show final image
-              mainGif.src = '끝.png';
+              mainGif.src = 'ㄹ.png';
               mainGif.style.display = 'block';
               mainGif.className = 'fullscreen';
               
@@ -933,23 +938,27 @@ function playVideoWithCaption(src, caption, isChoice3 = false) {
   retryButton.style.display = 'block';
 
   video.onended = () => {
-if (isChoice3) {
-  setTimeout(() => {
-    if (!video.ended) {
-      video.pause(); // 영상 멈추기
-      videoContainer.style.display = 'none';
-      retryButton.style.display = 'none';
-      mainGif.style.display = 'none';
-      showImageSequence();       // 빠바박 효과 실행
-      showSystemDeletionInput(); // 바로 다음 장면으로 이동
-      isChoice3Playing = false;
+    if (isChoice3) {
+      // Choice 3 영상이 끝나면 추가 영상 자동 재생
+      // 방법 1: 로컬 비디오 파일 사용 (youtube-video.mp4 파일을 준비하세요)
+      video.src = 'youtube-video.mp4';
+      video.className = 'fullscreen-video';
+      video.play();
+      captionBox.textContent = '';
+      
+      // 영상이 끝나면 다음 장면으로 이동
+      video.onended = () => {
+        videoContainer.style.display = 'none';
+        retryButton.style.display = 'none';
+        mainGif.style.display = 'none';
+        showSystemDeletionInput();
+        isChoice3Playing = false;
+      };
     }
-  }, 100000); // 1분 40초 = 100,000ms
-}
   };
 }
 
-const hoverText1 = '스티브를 자리를 대체하시겠습니까? 당신의 자유는 잃게될거예요. 대신 용감한 당신은 미래를 위한 의미 있는 실험으로 남겠죠.';
+const hoverText1 = '스티브를 자리를 대체하시겠습니까? 당신의 자유는 잃게될 거예요. 대신 용감한 당신은 미래를 위한 의미 있는 실험으로 남겠죠.';
 const hoverText2 = '스티브의 기억을 지우고 다른 사람에게 실험을 맡기시겠어요? 하하. 겁쟁이.';
 const hoverText3 = '당신은 모든 걸 알고 있었군요?';
 let currentHover = null;
