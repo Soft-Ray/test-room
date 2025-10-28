@@ -248,7 +248,7 @@
       opacity: 0;
       transition: all 0.5s ease;
       z-index: 100;
-      max-width: 500px;
+      max-width: 400px;
       height: 60px;
       line-height: 60px;
       white-space: nowrap;
@@ -290,82 +290,6 @@
       height: 100vh;
       object-fit: cover;
     }
-
-    /* 강화된 글리치 효과 애니메이션 */
-    @keyframes bigGlitch {
-      0% { 
-        background-position: 0 0, 0 0, 0 0, 0 0; 
-        filter: hue-rotate(180deg) contrast(1) brightness(1); 
-        transform: translate(0px, 0px); 
-      }
-      10% { 
-        background-position: -20px 0, 0 -15px, -10px -5px, 15px 10px; 
-        filter: hue-rotate(270deg) contrast(1.5) brightness(1.5); 
-        transform: translate(5px, -3px); 
-      }
-      20% { 
-        background-position: -15px -20px, -10px 5px, 15px -10px, -20px 15px; 
-        filter: hue-rotate(300deg) contrast(2) brightness(0.8); 
-        transform: translate(-3px, 4px); 
-      }
-      30% { 
-        background-position: 10px 15px, 20px -10px, -5px 20px, 25px -25px; 
-        filter: hue-rotate(240deg) contrast(1.8) brightness(2); 
-        transform: translate(2px, -5px); 
-      }
-      40% { 
-        background-position: 25px -5px, -5px 25px, 10px 5px, -15px 20px; 
-        filter: hue-rotate(200deg) contrast(0.8) brightness(1.2); 
-        transform: translate(-4px, 3px); 
-      }
-      50% { 
-        background-position: -10px 10px, 15px -20px, -20px 15px, 20px -10px; 
-        filter: hue-rotate(320deg) contrast(2.5) brightness(0.6); 
-        transform: translate(6px, -2px); 
-      }
-      60% { 
-        background-position: 5px -15px, -25px 0px, 20px -25px, -25px -25px; 
-        filter: hue-rotate(280deg) contrast(1.3) brightness(1.8); 
-        transform: translate(-2px, 5px); 
-      }
-      70% { 
-        background-position: -20px 5px, 10px 20px, -15px 10px, 10px 25px; 
-        filter: hue-rotate(220deg) contrast(0.5) brightness(2.2); 
-        transform: translate(4px, -4px); 
-      }
-      80% { 
-        background-position: 15px 20px, -15px -15px, 25px 0px, 0px -20px; 
-        filter: hue-rotate(260deg) contrast(2.2) brightness(0.9); 
-        transform: translate(-5px, 2px); 
-      }
-      90% { 
-        background-position: 0px -25px, 25px 5px, 5px -20px, -10px 5px; 
-        filter: hue-rotate(340deg) contrast(1.6) brightness(1.4); 
-        transform: translate(3px, 6px); 
-      }
-      100% { 
-        background-position: 0 0, 0 0, 0 0, 0 0; 
-        filter: hue-rotate(180deg) contrast(1) brightness(1); 
-        transform: translate(0px, 0px); 
-      }
-    }
-
-    @keyframes flash {
-      0% { opacity: 0.6; }
-      25% { opacity: 0.9; }
-      50% { opacity: 0.4; }
-      75% { opacity: 0.8; }
-      100% { opacity: 0.7; }
-    }
-
-    @keyframes flicker {
-      0% { opacity: 0.2; }
-      20% { opacity: 0.6; }
-      40% { opacity: 0.1; }
-      60% { opacity: 0.7; }
-      80% { opacity: 0.3; }
-      100% { opacity: 0.5; }
-    }
   </style>
 </head>
 <body>
@@ -401,35 +325,6 @@
     <div id="video-container" style="display: none;">
       <video id="choice-video" controls></video>
       <div id="video-caption"></div>
-    </div>
-
-    <!-- YouTube iframe for choice 3 -->
-    <div id="youtube-wrapper" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000; background: black; overflow: hidden;">
-      <iframe id="youtube-video" 
-              width="100%" 
-              height="100%" 
-              style="border: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);" 
-              frameborder="0" 
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-              allowfullscreen>
-      </iframe>
-    </div>
-
-    <!-- 화면 전환 효과 -->
-    <div id="screen-glitch" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2000; background: black;">
-      <div class="glitch-effect" style="width: 100%; height: 100%; 
-           background: 
-             repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.2) 2px, rgba(255,255,255,0.2) 3px),
-             repeating-linear-gradient(90deg, transparent, transparent 1px, rgba(0,255,255,0.8) 1px, rgba(0,255,255,0.8) 4px),
-             repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(255,0,255,0.7) 2px, rgba(255,0,255,0.7) 6px),
-             repeating-linear-gradient(135deg, transparent, transparent 1px, rgba(0,100,255,0.6) 1px, rgba(0,100,255,0.6) 5px);
-           animation: bigGlitch 0.1s infinite, flash 0.05s infinite;
-           mix-blend-mode: screen;">
-      </div>
-      <div class="glitch-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-           background: radial-gradient(circle, rgba(0,255,255,0.1) 30%, rgba(255,0,255,0.2) 70%);
-           animation: flicker 0.08s infinite;">
-      </div>
     </div>
 
     <button id="retry-button" style="display: none;">다시 하기</button>
@@ -473,10 +368,10 @@ function getSteveMessage() {
   return `[99..? 어..?  ${playerName}...? 당신 이름이잖아요.  저 사람이 어떻게 당신을 아는 거죠? \n 절 가둔 건 모두 당신이었나요?]`;
 }
 
-const finalNarration = '스티브를 자리를 대체하시겠습니까? 당신의 자유는 잃게될 거예요. 대신 용감한 당신은 미래를 위한 의미 있는 실험으로 남겠죠.';
+const finalNarration = '스티브를 자리를 대체하시겠습니까? 당신의 자유는 잃게될거예요. 대신 용감한 당신은 미래를 위한 의미 있는 실험으로 남겠죠.';
 
 const choice1Narration = '...나도 결국 누군가의 선택이었군요. 이제 당신이 절 대신할 차례인가요? 행운을 빌어요.';
-const choice2Narration = '당신은 자유를 얻었습니다. 그리고 스티브는... 그는... 당신의 기억 속에 남아있겠죠. 아니면 그저 당신의 꿈이었을지도.';
+const choice2Narration = '당신은 자유를 얻었습니다. 그리고 스티브는... 그는... 당신의 기억 속에 남아있겠죠. 아니면 그저 당신의 꿈이였을지도.';
 const choice3Narration = '기억을 테스트 이전으로 복구됩니다.';
 
 // 🔥 동적 메시지 함수들 추가
@@ -507,9 +402,6 @@ const skipButton = document.getElementById('skip-button');
 const videoContainer = document.getElementById('video-container');
 const video = document.getElementById('choice-video');
 const captionBox = document.getElementById('video-caption');
-const youtubeVideo = document.getElementById('youtube-video');
-const youtubeWrapper = document.getElementById('youtube-wrapper');
-const screenGlitch = document.getElementById('screen-glitch');
 
 const imageSequence = ['1.png', '2.png', '3.png', '4.png', '5.png', '6.png', '7.png', '8.png', '9.png', '10.png', '11.png', '마지막.png'];
 let imageIndex = 0, index = 0, steveIndex = 0;
@@ -524,49 +416,26 @@ let isSystemDeletionPhase = false;
 skipButton.addEventListener('click', () => {
   skipRequested = true;
 });
-// retryButton 클릭 이벤트 수정 - 항상 선택지로 돌아가도록
+
+// retryButton 클릭 이벤트 수정
 retryButton.addEventListener('click', () => {
-  // 모든 컨테이너와 상태 초기화
   videoContainer.style.display = 'none';
-  youtubeWrapper.style.display = 'none';
-  screenGlitch.style.display = 'none';
   retryButton.style.display = 'none';
-  choiceNarration.style.display = 'none';
-  inputContainer.style.display = 'none';
+
+    // YouTube iframe 숨기기
+  youtubeVideo.style.display = 'none';
+  youtubeVideo.src = 'https://youtu.be/COlhuh0cFr0';
   
-  // 시스템 삭제 관련 상태 초기화
-  isSystemDeletionPhase = false;
-  isChoice3Playing = false;
-  
-  // 기존 버튼 컨테이너들 제거
-  const existingContainers = document.querySelectorAll('.steve-button-container, .confirmation-button-container');
-  existingContainers.forEach(container => container.remove());
-  
-  // GIF를 원래 상태로 복원
-  mainGif.style.display = 'block';
-  mainGif.src = 'Chp3.gif';
-  mainGif.className = '';
-  
-  // UI 요소들 다시 표시
-  speakerLabel.style.display = 'block';
-  speakerLabel.textContent = '나레이션';
-  speakerLabel.className = 'speaker-label narration-label';
-  
-  textBox.style.display = 'block';
-  textBox.className = 'text-line narration';
-  textBox.textContent = finalNarration;
-  
-  // input placeholder 원래대로 복원
-  input.placeholder = '입력하세요...';
-  
-  // 선택 버튼들 다시 표시
-  choiceButtons.style.display = 'flex';
-  
-  // center-wrapper 스타일 원래대로 복원
-  const centerWrapper = document.querySelector('.center-wrapper');
-  if (centerWrapper) {
-    centerWrapper.style.justifyContent = 'center';
-    centerWrapper.style.alignItems = 'center';
+  if (isChoice3Playing) {
+    // Choice 3 영상이 끝난 후에는 GIF를 숨기고 시스템 삭제 입력만 표시
+    mainGif.style.display = 'none'; // GIF 숨기기
+    showSystemDeletionInput();
+    isChoice3Playing = false;
+  } else {
+    // 다른 선택지의 경우 GIF 표시하고 선택 버튼들 표시
+    mainGif.style.display = 'block';
+    mainGif.src = 'Chp3.gif';
+    choiceButtons.style.display = 'flex';
   }
 });
 
@@ -610,11 +479,8 @@ function typeNarration() {
       setTimeout(step, 40);
     } else {
       cursor.remove();
-      // SKIP 버튼을 텍스트 완료 후 1초 더 유지
-      setTimeout(() => {
-        skipButton.style.display = 'none';
-        setTimeout(showImageSequence, 1000);
-      }, 1000);
+      skipButton.style.display = 'none';
+      setTimeout(showImageSequence, 1000);
     }
   }
 
@@ -641,7 +507,6 @@ function startSteve() {
   function typeSteve() {
     if (skipRequested) {
       textBox.textContent = currentSteveMessage;
-      steveCursor.remove();
       skipButton.style.display = 'none';
       setTimeout(() => inputContainer.style.display = 'flex', 500);
       return;
@@ -652,11 +517,8 @@ function startSteve() {
       setTimeout(typeSteve, 40);
     } else {
       steveCursor.remove();
-      // SKIP 버튼을 텍스트 완료 후 5초 더 유지
-      setTimeout(() => {
-        skipButton.style.display = 'none';
-        setTimeout(() => inputContainer.style.display = 'flex', 5000);
-      }, 1000);
+      skipButton.style.display = 'none';
+      setTimeout(() => inputContainer.style.display = 'flex', 5000);
     }
   }
   typeSteve();
@@ -711,11 +573,8 @@ function handleUserInput() {
       textBox.textContent += reply[idx++];
       setTimeout(typeReply, 40);
     } else {
-      // SKIP 버튼을 텍스트 완료 후 5초 더 유지
-      setTimeout(() => {
-        skipButton.style.display = 'none';
-        setTimeout(showFinalNarration, 5000);
-      }, 1000);
+      skipButton.style.display = 'none';
+      setTimeout(showFinalNarration, 5000);
     }
   }
   input.value = '';
@@ -725,14 +584,15 @@ function handleUserInput() {
 function handleSystemDeletionInput(userInput) {
   input.value = '';
   
-  if (userInput === '시스템을 삭제한다.' || userInput === '시스템을 삭제 한다.') {
+  if (userInput === '시스템을 삭제한다.' || userInput === '시스템을 삭제 한다.' || userInput === '시스템을 삭제한다' || userInput === '시스템을 삭제 한다') {
     inputContainer.style.display = 'none';
     showSystemDeletionConfirmation();
   } else {
     // Random error message
     const errorMessages = [
       '다시 입력하세요. 당신 글을 잘 못 읽나요?',
-      '당신이 선택한 게 이게 아니었나요? 여기까지 왔다면 이 선택이 맞을텐데...'
+      '당신이 선택한 게 이게 아니였나요? 여기까지 왔다면 이 선택이 맞을텐데...',
+      '정확하게 써야죠. 이걸 장난처럼만 여기지 말아요.'
     ];
     const randomMessage = errorMessages[Math.floor(Math.random() * errorMessages.length)];
     
@@ -1015,11 +875,8 @@ function showFinalNarration() {
       textBox.textContent += finalNarration[idx++];
       setTimeout(typeNarr, 40);
     } else {
-      // SKIP 버튼을 텍스트 완료 후 2초 더 유지
-      setTimeout(() => {
-        skipButton.style.display = 'none';
-        setTimeout(() => choiceButtons.style.display = 'flex', 2000);
-      }, 1000);
+      skipButton.style.display = 'none';
+      setTimeout(() => choiceButtons.style.display = 'flex', 2000);
     }
   }
   typeNarr();
@@ -1054,49 +911,39 @@ function typeChoiceNarration(text, callback) {
 
 function playVideoWithCaption(src, caption, isChoice3 = false) {
   choiceNarration.style.display = 'none';
-  
-  if (isChoice3) {
-    // Choice 3의 경우 YouTube 영상 재생 (UI 완전 숨김)
-    youtubeVideo.src = 'https://www.youtube.com/embed/3Jh6S8E-5A4?autoplay=1&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&cc_load_policy=0&fs=0&disablekb=1&start=0';
-    youtubeWrapper.style.display = 'block';
-    isChoice3Playing = true;
-    retryButton.style.display = 'block';
-    
-    // 30초 후 글리치 효과와 함께 전환
-    setTimeout(() => {
-      if (isChoice3Playing) {
-        // 글리치 효과 시작
-        screenGlitch.style.display = 'block';
-        
-        // 1초 후 글리치 효과 끝내고 다음 화면으로
-        setTimeout(() => {
-          youtubeWrapper.style.display = 'none';
-          screenGlitch.style.display = 'none';
-          retryButton.style.display = 'none';
-          mainGif.style.display = 'none';
-          showSystemDeletionInput();
-          isChoice3Playing = false;
-        }, 1000);
-      }
-    }, 30000); // 30초 후 전환 시작
-    
-  } else {
-    // Choice 1, 2의 경우 일반 비디오 재생
-    videoContainer.style.display = 'block';
-    video.src = src;
-    video.className = '';
-    video.play();
-    captionBox.textContent = caption;
-    retryButton.style.display = 'block';
-    isChoice3Playing = false;
+  videoContainer.style.display = 'block';
+  video.src = src;
 
-    video.onended = () => {
-      // 일반 영상 종료 시에는 아무것도 하지 않음 (다시하기 버튼만 표시)
-    };
+  if (isChoice3) {
+    video.className = 'fullscreen-video';
+    isChoice3Playing = true;
+  } else {
+    video.className = '';
+    isChoice3Playing = false;
   }
+
+  video.play();
+  captionBox.textContent = caption;
+  retryButton.style.display = 'block';
+
+  video.onended = () => {
+if (isChoice3) {
+  setTimeout(() => {
+    if (!video.ended) {
+      video.pause(); // 영상 멈추기
+      videoContainer.style.display = 'none';
+      retryButton.style.display = 'none';
+      mainGif.style.display = 'none';
+      showImageSequence();       // 빠바박 효과 실행
+      showSystemDeletionInput(); // 바로 다음 장면으로 이동
+      isChoice3Playing = false;
+    }
+  }, 100000); // 1분 40초 = 100,000ms
+}
+  };
 }
 
-const hoverText1 = '스티브를 자리를 대체하시겠습니까? 당신의 자유는 잃게될 거예요. 대신 용감한 당신은 미래를 위한 의미 있는 실험으로 남겠죠.';
+const hoverText1 = '스티브를 자리를 대체하시겠습니까? 당신의 자유는 잃게될거예요. 대신 용감한 당신은 미래를 위한 의미 있는 실험으로 남겠죠.';
 const hoverText2 = '스티브의 기억을 지우고 다른 사람에게 실험을 맡기시겠어요? 하하. 겁쟁이.';
 const hoverText3 = '당신은 모든 걸 알고 있었군요?';
 let currentHover = null;
@@ -1177,5 +1024,3 @@ window.onload = async () => {
 </script>
 </body>
 </html>
-
-
