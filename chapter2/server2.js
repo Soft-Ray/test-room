@@ -398,7 +398,7 @@ ps.긍정으로 대답하는 것은 진실로 이끌어낼지도 몰라요.
             },
             {
               type: 'narration',
-              text: `'액자를 내려줘' 라고 해보세요.`
+              text: `'내려줘' 라고 해보세요.`
             }
           ],
           image: 'images/sup.gif'
@@ -425,7 +425,7 @@ ps.긍정으로 대답하는 것은 진실로 이끌어낼지도 몰라요.
     }
 
  // 액자 관련 처리
-    if (userMessage.includes('액자') || userMessage.includes('그림')) {
+    if (userMessage.includes('그림')) {
       
       if (!frameChecked) {
         return res.json({
