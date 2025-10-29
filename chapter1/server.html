@@ -44,7 +44,7 @@ h1, h2, h3 {
       box-shadow: 0 0 15px #0ff;
       width: 80%;
       max-width: 1200px;
-      height: 80%;
+      height: 55%;
       text-align: left;
     }
 
@@ -963,12 +963,21 @@ async function sendMessage(message) {
             return;
         }
 
-        if (message.includes('열자') || message.includes('열어') || message.includes('열쇠')) {
-    displayMessage('나레이션', '문이 열렸습니다. 다음 방으로 이동해주세요.', 'narration');
-    await new Promise(r => setTimeout(r, 2000));
-    showOverlayAndButton(currentChapter + 1);
-    return;
-}
+        if (message.includes('열자')) {
+            displayMessage('나레이션', '문이 열렸습니다. 다음 방으로 이동해주세요.', 'narration');
+            await new Promise(r => setTimeout(r, 2000));
+            showOverlayAndButton(currentChapter + 1);
+            return;
+        }
+
+        const keyKeywords = ["열쇠", "키", "key"];
+        const doorKeywords = ["문 열기", "문을 열다", "문 열어", "문을 열어", "문을 열어라", "열쇠로 문을", "열쇠로 문 열기"];
+        
+        if (keyKeywords.some(keyword => message.toLowerCase().includes(keyword)) && safeOpened && !hasKey) {
+            hasKey = true;
+            displayMessage('스티브', '열쇠를 찾았어요! 이제 문을 열 수 있을 것 같습니다.', 'steve');
+            return;
+        }
         
         if (doorKeywords.some(keyword => message.includes(keyword)) && hasKey) {
             displayMessage('스티브', '열쇠로 문을 열었어요! 우리는 탈출에 성공했습니다!', 'steve');
