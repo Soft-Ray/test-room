@@ -326,8 +326,6 @@
       <video id="choice-video" controls></video>
       <div id="video-caption"></div>
     </div>
-
-    <button id="retry-button" style="display: none;">다시 하기</button>
   </div>
 
 <script>
@@ -394,7 +392,6 @@ const choice2Button = document.getElementById('choice2');
 const choice3Button = document.getElementById('choice3');
 const popup = document.getElementById('achievementPopup');
 const mainGif = document.getElementById('main-gif');
-const retryButton = document.getElementById('retry-button');
 const choiceNarration = document.getElementById('choice-narration');
 const choiceNarrationText = document.getElementById('choice-narration-text');
 const skipButton = document.getElementById('skip-button');
@@ -415,24 +412,6 @@ let isSystemDeletionPhase = false;
 
 skipButton.addEventListener('click', () => {
   skipRequested = true;
-});
-
-// retryButton 클릭 이벤트 수정
-retryButton.addEventListener('click', () => {
-  videoContainer.style.display = 'none';
-  retryButton.style.display = 'none';
-
-  if (isChoice3Playing) {
-    // Choice 3 영상이 끝난 후에는 GIF를 숨기고 시스템 삭제 입력만 표시
-    mainGif.style.display = 'none';
-    showSystemDeletionInput();
-    isChoice3Playing = false;
-  } else {
-    // 다른 선택지의 경우 GIF 표시하고 선택 버튼들 표시
-    mainGif.style.display = 'block';
-    mainGif.src = 'Chp3.gif';
-    choiceButtons.style.display = 'flex';
-  }
 });
 
 function showImageSequence() {
@@ -487,7 +466,7 @@ function startSteve() {
   skipRequested = false;
   skipButton.style.display = 'inline';
 
-  speakerLabel.textContent = '스티브';
+  speakerLabel.textContent = '스티비';
   speakerLabel.className = 'speaker-label steve-label';
   textBox.innerHTML = '';
   textBox.className = 'text-line steve';
@@ -548,7 +527,7 @@ function handleUserInput() {
   }
 
   inputContainer.style.display = 'none';
-  speakerLabel.textContent = '스티브';
+  speakerLabel.textContent = '스티비';
   speakerLabel.className = 'speaker-label steve-label';
   textBox.className = 'text-line steve';
   textBox.textContent = '';
@@ -593,7 +572,7 @@ function handleSystemDeletionInput(userInput) {
     const randomMessage = errorMessages[Math.floor(Math.random() * errorMessages.length)];
     
     inputContainer.style.display = 'none';
-    speakerLabel.textContent = '스티브';
+    speakerLabel.textContent = '스티비';
     speakerLabel.className = 'speaker-label steve-label';
     textBox.className = 'text-line steve';
     textBox.textContent = '';
@@ -690,12 +669,32 @@ function showSteveChoiceButtons() {
   
   becomeButton.addEventListener('click', () => {
     buttonContainer.remove();
-    showSystemDeletionInput();
+    textBox.style.display = 'none';
+    speakerLabel.style.display = 'none';
+    inputContainer.style.display = 'none';
+    mainGif.style.display = 'none';
+    
+    // Choice 1과 동일하게 처리
+    isSystemDeletionPhase = false; // 시스템 삭제 단계 종료
+    typeChoiceNarration(choice1Narration, () => {
+      playVideoWithCaption('pick1.mp4', choice1Narration, false);
+      showPopup('🎖️ Normal Ending. 미래의 구원자');
+    });
   });
   
   notBecomeButton.addEventListener('click', () => {
     buttonContainer.remove();
-    showSystemDeletionInput();
+    textBox.style.display = 'none';
+    speakerLabel.style.display = 'none';
+    inputContainer.style.display = 'none';
+    mainGif.style.display = 'none';
+    
+    // Choice 2와 동일하게 처리
+    isSystemDeletionPhase = false; // 시스템 삭제 단계 종료
+    typeChoiceNarration(choice2Narration, () => {
+      playVideoWithCaption('pick2.mp4', choice2Narration, false);
+      showPopup('🎖️ Normal Ending. 나쁜 악몽?');
+    });
   });
 }
 
@@ -817,7 +816,7 @@ function showConfirmationButton(stage) {
               choiceButtons.style.display = 'none';
               
               // Show final image
-              mainGif.src = '끝.png';
+              mainGif.src = 'ㄹ.png';
               mainGif.style.display = 'block';
               mainGif.className = 'fullscreen';
               
@@ -912,24 +911,40 @@ function playVideoWithCaption(src, caption, isChoice3 = false) {
   video.className = '';
   video.play();
   captionBox.textContent = caption;
-  retryButton.style.display = 'block';
 
   if (isChoice3) {
     isChoice3Playing = true;
-  } else {
-    isChoice3Playing = false;
-  }
-
-  video.onended = () => {
-    if (isChoice3) {
-      // Choice 3 영상이 끝나면 바로 다음 장면으로 이동
+    
+    // Choice 3 영상이 끝나면 바로 다음 장면으로 이동
+    video.onended = () => {
       videoContainer.style.display = 'none';
-      retryButton.style.display = 'none';
       mainGif.style.display = 'none';
+      captionBox.textContent = '';
       showSystemDeletionInput();
       isChoice3Playing = false;
-    }
-  };
+    };
+  } else {
+    isChoice3Playing = false;
+    
+    // Choice 1, 2 영상이 끝나면 끝.png 표시 후 메인 화면으로
+    video.onended = () => {
+      videoContainer.style.display = 'none';
+      captionBox.textContent = '';
+      textBox.style.display = 'none';
+      speakerLabel.style.display = 'none';
+      choiceButtons.style.display = 'none';
+      
+      // 끝.png 전체 화면으로 표시
+      mainGif.src = '끝.png';
+      mainGif.style.display = 'block';
+      mainGif.className = 'fullscreen';
+      
+      // 3초 후 메인 화면으로 이동
+      setTimeout(() => {
+        window.location.href = 'index.html';
+      }, 3000);
+    };
+  }
 }
 
 const hoverText1 = '스티브를 자리를 대체하시겠습니까? 당신의 자유는 잃게될 거예요. 대신 용감한 당신은 미래를 위한 의미 있는 실험으로 남겠죠.';
