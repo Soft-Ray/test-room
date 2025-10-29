@@ -963,7 +963,7 @@ async function sendMessage(message) {
             return;
         }
 
-        if (message.includes('열자')) {
+        if (message.includes('열자','열어','열쇠')) {
             displayMessage('나레이션', '문이 열렸습니다. 다음 방으로 이동해주세요.', 'narration');
             await new Promise(r => setTimeout(r, 2000));
             showOverlayAndButton(currentChapter + 1);
