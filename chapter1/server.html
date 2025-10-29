@@ -963,12 +963,12 @@ async function sendMessage(message) {
             return;
         }
 
-        if (message.includes('열자','열어','열쇠')) {
-            displayMessage('나레이션', '문이 열렸습니다. 다음 방으로 이동해주세요.', 'narration');
-            await new Promise(r => setTimeout(r, 2000));
-            showOverlayAndButton(currentChapter + 1);
-            return;
-        }
+        if (message.includes('열자') || message.includes('열어') || message.includes('열쇠')) {
+    displayMessage('나레이션', '문이 열렸습니다. 다음 방으로 이동해주세요.', 'narration');
+    await new Promise(r => setTimeout(r, 2000));
+    showOverlayAndButton(currentChapter + 1);
+    return;
+}
         
         if (doorKeywords.some(keyword => message.includes(keyword)) && hasKey) {
             displayMessage('스티브', '열쇠로 문을 열었어요! 우리는 탈출에 성공했습니다!', 'steve');
