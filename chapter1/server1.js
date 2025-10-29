@@ -529,53 +529,6 @@ app.post('/chat', async (req, res) => {
       });
     }
 
-    // 문 열기 로직
-    if (userMessage.includes('열쇠') && userMessage.includes('문') && userMessage.includes('열자')) {
-      if (keyFound) {
-        secondRoomEntered = true;
-        return res.json({
-          "message": [
-            { "type": "narration", "text": "문이 열렸습니다. 다음 방으로 이동합니다." },
-            { "type": "user", "text": `스티브: ${playerName}님, 문이 열렸어요... 다음 방에 도착했어요..!` }
-          ],
-          "image": "images/hap.png",
-          "clear": true
-        });
-      }
-    }
-
-    if (userMessage.includes('문') && userMessage.includes('열')) {
-      if (keyFound) {
-        secondRoomEntered = true;
-        return res.json({
-          "message": [
-            { "type": "narration", "text": "문이 열렸습니다. 다음 방으로 이동합니다." },
-            { "type": "user", "text": `스티브: ${playerName}님, 문이 열렸어요... 다음 방에 도착했어요..!` }
-          ],
-          "image": "images/hap.png",
-          "clear": true
-        });
-      }
-    }
-
-    if (userMessage.includes('열쇠로 문을 열어')) {
-      if (keyFound) {
-        secondRoomEntered = true;
-        return res.json({
-          message: `${playerName}님, 문이 열린 것 같아요. 한 번 넘어가볼게요... 탈출이 눈 앞이네요!`,
-          image: "images/hap.png",
-          clear: true
-        });
-      }
-    }
-
-    // 빵과 물 언급
-    if (userMessage.includes('빵') || userMessage.includes('물')) {
-      return res.json({
-        message: "조금 더 오래 살 수 있겠네요.",
-        image: 'images/neutral.png'
-      });
-    }
 
     chatHistory.push({ role: 'user', content: userMessage });
 
@@ -616,3 +569,4 @@ const start = () => {
 if (import.meta.url === `file://${process.argv[1]}`) {
   start();
 }
+
